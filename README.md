@@ -5,7 +5,7 @@ Unified monorepo for the FX option platform. It includes:
 - `packages/ui-kit` – Emerald design system published as a reusable React kit.
 - `apps/portal-web` – Client portal shell built with Next.js using the Emerald components.
 - `apps/admin` – Operator control room with live monitoring and admin workflows.
-- `services/` – Python services covering pricing orchestration, market data, risk netting, audit chains, connectors, and execution workflows.
+- `services/` – Python services covering pricing orchestration, market data, risk netting, payments, audit chains, connectors, and execution workflows.
 - `docs/` – Product, compliance, and connector documentation.
 
 ## Frontend development
@@ -42,6 +42,26 @@ python -m services.audit.cli path/to/audit.db
 ### Execution tooling
 
 The CME MXN option execution service lives under `services/execution`. It uses `ib-insync` to place laddered hedges asynchronously and persist fills. A synchronous, storage-first variant is available under `services/execution_sync` together with its own test harness while the team evaluates the two approaches.
+
+### Payments orchestration
+
+`services/payments` exposes a lightweight payments layer that orchestrates collect (Stripe ACH or dLocal) and payout (Wise) workflows. Use the app facade directly when running locally:
+
+```python
+from services.payments.app import app
+
+status, body = app.post_collect_create({
+    "amount": "10.00",
+    "currency": "USD",
+    "customer_meta": {"customer_id": "abc"},
+})
+```
+
+Run the targeted suite with:
+
+```bash
+pytest services/payments/tests
+```
 
 ## Connectors
 
