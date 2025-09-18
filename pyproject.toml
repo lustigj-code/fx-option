@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fx-option"
+version = "0.1.0"
+description = "MXN option execution tooling"
+requires-python = ">=3.11"
+dependencies = [
+    "ib-insync>=0.9.86",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+]
