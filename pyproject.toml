@@ -1,22 +1,23 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fx-option"
 version = "0.1.0"
-description = "FX option audit logging service"
+description = "FX option backend services and tooling"
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{name = "FX Option Team"}]
-dependencies = []
+authors = [{ name = "FX Option Team" }]
+dependencies = [
+    "ib-insync>=0.9.86",
+]
 
 [project.optional-dependencies]
-test = [
-    "pytest",
-    "pytest-cov"
+dev = [
+    "pytest>=7.4",
+    "pytest-cov",
 ]
 
 [project.scripts]
 audit_verify = "services.audit.cli:main"
-
