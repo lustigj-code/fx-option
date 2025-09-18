@@ -1,0 +1,13 @@
+{
+  "name": "fx-option",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm --filter ui-kit build",
+    "storybook": "pnpm --filter ui-kit storybook",
+    "test": "pnpm --filter ui-kit test"
+  }
+}
