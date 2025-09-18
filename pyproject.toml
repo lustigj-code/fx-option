@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fx-option"
+version = "0.1.0"
+description = "Execution service for CME MXN options"
+authors = [{ name = "Auto Dev" }]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
