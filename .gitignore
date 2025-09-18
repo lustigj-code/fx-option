@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.payments.db
+*.sqlite
+.pytest_cache/
+test_payments.db
