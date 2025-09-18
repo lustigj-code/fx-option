@@ -1,0 +1,5 @@
+{
+  "name": "fx-option",
+  "private": true,
+  "workspaces": ["apps/*"]
+}
