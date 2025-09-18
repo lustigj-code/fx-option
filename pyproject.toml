@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fx-option"
+version = "0.1.0"
+description = "FX option audit logging service"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "FX Option Team"}]
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov"
+]
+
+[project.scripts]
+audit_verify = "services.audit.cli:main"
+
