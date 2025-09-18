@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 248 250 252;
+  --foreground: 15 23 42;
+  --muted: 100 116 139;
+  --accent: 59 130 246;
+}
+
+body {
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--background));
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+.main-container {
+  @apply flex min-h-screen bg-slate-900 text-slate-100;
+}
+
+.sidebar {
+  @apply w-64 bg-slate-950 border-r border-slate-800 px-6 py-8 flex flex-col gap-6;
+}
+
+.sidebar a {
+  @apply text-slate-300 hover:text-white transition-colors font-medium;
+}
+
+.sidebar a.active {
+  @apply text-white bg-slate-800/70 px-3 py-2 rounded-lg;
+}
+
+.content {
+  @apply flex-1 p-8 space-y-8;
+}
+
+.section-card {
+  @apply rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl shadow-slate-950/40;
+}
+
+.section-title {
+  @apply text-lg font-semibold text-slate-100 mb-4 flex items-center gap-3;
+}
+
+.stat-grid {
+  @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.stat-card {
+  @apply section-card flex flex-col gap-2;
+}
+
+.stat-value {
+  @apply text-3xl font-bold text-white;
+}
+
+.table {
+  @apply w-full border-collapse;
+}
+
+.table thead tr {
+  @apply text-left text-xs uppercase tracking-wide text-slate-400;
+}
+
+.table thead th {
+  @apply border-b border-slate-800 pb-3;
+}
+
+.table tbody tr {
+  @apply border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors;
+}
+
+.table tbody td {
+  @apply py-3 text-sm text-slate-200;
+}
+
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+}
+
+.badge-success {
+  @apply badge bg-emerald-500/20 text-emerald-300;
+}
+
+.badge-warning {
+  @apply badge bg-amber-500/20 text-amber-300;
+}
+
+.badge-danger {
+  @apply badge bg-rose-500/20 text-rose-300;
+}
+
+.input {
+  @apply w-full rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70;
+}
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500;
+}
+
+.button-secondary {
+  @apply inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800;
+}
+
+.tab-bar {
+  @apply flex items-center gap-2 rounded-xl bg-slate-900/70 p-1 border border-slate-800;
+}
+
+.tab-button {
+  @apply flex-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:text-white;
+}
+
+.tab-button.active {
+  @apply bg-blue-600 text-white shadow-lg shadow-blue-600/20;
+}
+
+.filter-bar {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.filter-pill {
+  @apply inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-200;
+}
+
+.search-input {
+  @apply input sm:w-64;
+}
+
+.timer {
+  @apply text-xs font-medium text-slate-400;
+}
