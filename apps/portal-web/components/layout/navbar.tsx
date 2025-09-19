@@ -24,8 +24,8 @@ export function Navbar() {
           <Link
             key={link.href}
             href={link.href}
-            className={`text-sm font-medium transition hover:text-foreground ${
-              isActive ? "text-foreground" : "text-foreground/70"
+            className={`text-sm font-medium transition hover:text-text ${
+              isActive ? "text-text" : "text-text/70"
             }`}
           >
             {link.label}
@@ -45,11 +45,11 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {session ? (
             <>
-              <span className="hidden text-sm text-foreground/70 sm:inline">{session.user?.name}</span>
+              <span className="hidden text-sm text-text/70 sm:inline">{session.user?.name}</span>
               <button
                 type="button"
                 onClick={() => signOut()}
-                className="rounded-full border border-accent/40 px-4 py-1.5 text-sm font-semibold text-foreground transition hover:border-accent hover:bg-accent/20"
+                className="rounded-full border border-accent/40 px-4 py-1.5 text-sm font-semibold text-text transition hover:border-accent hover:bg-accent/20"
               >
                 Sign out
               </button>
@@ -59,7 +59,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => signIn()}
-                className="rounded-full border border-accent/40 px-4 py-1.5 text-sm font-semibold text-foreground transition hover:border-accent hover:bg-accent/20"
+                className="rounded-full border border-accent/40 px-4 py-1.5 text-sm font-semibold text-text transition hover:border-accent hover:bg-accent/20"
               >
                 Login
               </button>

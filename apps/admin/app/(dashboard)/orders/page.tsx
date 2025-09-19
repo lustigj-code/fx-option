@@ -6,7 +6,7 @@ import type { HedgeOrder } from '@/lib/data';
 import { hedgeOrders } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 
-const desks = ['All desks', ...new Set(hedgeOrders.map((order) => order.desk))];
+const desks = ['All desks', ...Array.from(new Set(hedgeOrders.map((order) => order.desk)))];
 const statuses: Array<'All statuses' | HedgeOrder['status']> = ['All statuses', 'Working', 'Partial', 'Hedged', 'Rejected'];
 
 function statusStyle(status: HedgeOrder['status']) {

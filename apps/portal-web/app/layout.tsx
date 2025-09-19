@@ -12,14 +12,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className="bg-background text-foreground">
+      <body className="bg-background text-text">
         <SessionProvider>
           <div className="relative flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1 px-4 pb-16 pt-24 sm:px-8 lg:px-16 xl:px-24">
               {children}
             </main>
-            <footer className="px-4 py-8 text-center text-xs text-foreground/60 sm:px-8">
+            <footer className="px-4 py-8 text-center text-xs text-text/60 sm:px-8">
               © {new Date().getFullYear()} FX Portal. All rights reserved.
             </footer>
           </div>

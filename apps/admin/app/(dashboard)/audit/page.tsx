@@ -10,8 +10,14 @@ export default function AuditPage() {
   const [actor, setActor] = useState<string>('All users');
   const [entity, setEntity] = useState<string>('All entities');
 
-  const actors = useMemo(() => ['All users', ...new Set(auditLog.map((entry) => entry.actor))], []);
-  const entities = useMemo(() => ['All entities', ...new Set(auditLog.map((entry) => entry.entity))], []);
+  const actors = useMemo(
+    () => ['All users', ...Array.from(new Set(auditLog.map((entry) => entry.actor)))],
+    []
+  );
+  const entities = useMemo(
+    () => ['All entities', ...Array.from(new Set(auditLog.map((entry) => entry.entity)))],
+    []
+  );
 
   const filtered = useMemo(() => {
     return auditLog.filter((entry) => {

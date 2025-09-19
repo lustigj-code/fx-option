@@ -26,8 +26,8 @@ export default function HedgesPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-foreground">Hedge playbooks</h1>
-        <p className="text-sm text-foreground/70">
+        <h1 className="text-3xl font-semibold text-text">Hedge playbooks</h1>
+        <p className="text-sm text-text/70">
           Activate and monitor hedge strategies with clear guardrails and escalation rules.
         </p>
       </div>
@@ -49,7 +49,7 @@ export default function HedgesPage() {
           />
         ))}
       </div>
-      <div className="rounded-3xl border border-dashed border-accent/40 bg-accent/5 p-6 text-center text-sm text-foreground/60">
+      <div className="rounded-3xl border border-dashed border-accent/40 bg-accent/5 p-6 text-center text-sm text-text/60">
         Need another playbook? Drag in hedging widgets from the library to construct new guardrails in minutes.
       </div>
     </div>

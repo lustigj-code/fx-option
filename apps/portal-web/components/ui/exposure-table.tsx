@@ -24,7 +24,7 @@ export function ExposureTable({ rows }: { rows: Exposure[] }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">
       <table className="min-w-full divide-y divide-white/5 text-left text-sm">
-        <thead className="bg-white/5 text-xs uppercase tracking-wider text-foreground/60">
+        <thead className="bg-white/5 text-xs uppercase tracking-wider text-text/60">
           <tr>
             <th scope="col" className="px-6 py-4">
               Pair
@@ -43,10 +43,10 @@ export function ExposureTable({ rows }: { rows: Exposure[] }) {
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5 text-foreground/80">
+        <tbody className="divide-y divide-white/5 text-text/80">
           {rows.map((exposure) => (
             <tr key={exposure.currencyPair} className="hover:bg-white/5">
-              <td className="px-6 py-4 font-semibold text-foreground">
+              <td className="px-6 py-4 font-semibold text-text">
                 {exposure.currencyPair}
               </td>
               <td className="px-6 py-4">{exposure.netExposure}</td>
@@ -58,7 +58,7 @@ export function ExposureTable({ rows }: { rows: Exposure[] }) {
                   {statusCopy[exposure.status]}
                 </span>
               </td>
-              <td className="px-6 py-4 text-foreground/60">{exposure.updatedAt}</td>
+              <td className="px-6 py-4 text-text/60">{exposure.updatedAt}</td>
             </tr>
           ))}
         </tbody>

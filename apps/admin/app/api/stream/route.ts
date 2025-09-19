@@ -1,5 +1,7 @@
 import { auditLog, hedgeOrders, payments, quotes } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
+
 function formatTime() {
   return new Date().toLocaleTimeString('en-US', {
     hour12: false,

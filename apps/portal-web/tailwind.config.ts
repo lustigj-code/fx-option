@@ -14,6 +14,7 @@ const config: Config = {
         card: "#0f1511",
         accent: "#2df07d",
         "accent-muted": "#1e3f2c",
+        foreground: "#e8f3ec",
         text: "#e8f3ec",
         muted: "#9db8a6",
         danger: "#ff4d4d"

@@ -23,14 +23,14 @@ export default function ExportsPage() {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-10">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-foreground">Exports &amp; reporting</h1>
-        <p className="text-sm text-foreground/70">
+        <h1 className="text-3xl font-semibold text-text">Exports &amp; reporting</h1>
+        <p className="text-sm text-text/70">
           Configure always-fresh packets across PDF, CSV, and XLS to keep stakeholders in the loop.
         </p>
       </div>
       <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
         <table className="min-w-full divide-y divide-white/10 text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase tracking-wider text-foreground/60">
+          <thead className="bg-white/5 text-xs uppercase tracking-wider text-text/60">
             <tr>
               <th className="px-6 py-4">Name</th>
               <th className="px-6 py-4">Cadence</th>
@@ -38,10 +38,10 @@ export default function ExportsPage() {
               <th className="px-6 py-4">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/10 text-foreground/80">
+          <tbody className="divide-y divide-white/10 text-text/80">
             {exportsList.map((item) => (
               <tr key={item.name} className="hover:bg-white/5">
-                <td className="px-6 py-4 font-semibold text-foreground">{item.name}</td>
+                <td className="px-6 py-4 font-semibold text-text">{item.name}</td>
                 <td className="px-6 py-4">{item.frequency}</td>
                 <td className="px-6 py-4">{item.lastRun}</td>
                 <td className="px-6 py-4">
@@ -54,7 +54,7 @@ export default function ExportsPage() {
           </tbody>
         </table>
       </div>
-      <div className="rounded-3xl border border-dashed border-white/20 bg-white/5 p-6 text-sm text-foreground/70">
+      <div className="rounded-3xl border border-dashed border-white/20 bg-white/5 p-6 text-sm text-text/70">
         Need to push data into your warehouse? Portal exposes streaming webhooks alongside daily file drops.
       </div>
     </div>

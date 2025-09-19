@@ -8,14 +8,14 @@
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans min-h-screen;
+    @apply bg-background text-text font-sans min-h-screen;
     background-image: radial-gradient(circle at 20% 20%, rgba(124, 92, 255, 0.25), transparent 55%),
       radial-gradient(circle at 80% 0%, rgba(67, 56, 202, 0.35), transparent 60%);
     background-color: #05070d;
   }
 
   a {
-    @apply text-foreground;
+    @apply text-text;
   }
 }
 
@@ -82,5 +82,5 @@ input[type='range']::-moz-range-track {
   pointer-events: none;
   mix-blend-mode: soft-light;
   opacity: 0.4;
-  background-image: theme('backgroundImage.noise');
+  background-image: theme('backgroundImage.noise-overlay');
 }

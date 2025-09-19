@@ -41,15 +41,15 @@ export default function ExposuresPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-foreground">Exposure overview</h1>
-        <p className="text-sm text-foreground/70">Monitor program coverage and identify material FX swings in real time.</p>
+        <h1 className="text-3xl font-semibold text-text">Exposure overview</h1>
+        <p className="text-sm text-text/70">Monitor program coverage and identify material FX swings in real time.</p>
       </div>
       <ExposureTable rows={data} />
       <div className="grid gap-6 sm:grid-cols-3">
         {insightTiles.map((metric) => (
           <div key={metric.label} className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <p className="text-xs uppercase tracking-widest text-foreground/50">{metric.label}</p>
-            <p className="mt-3 text-2xl font-semibold text-foreground">{metric.value}</p>
+            <p className="text-xs uppercase tracking-widest text-text/50">{metric.label}</p>
+            <p className="mt-3 text-2xl font-semibold text-text">{metric.value}</p>
           </div>
         ))}
       </div>
