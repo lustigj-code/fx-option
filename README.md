@@ -63,6 +63,21 @@ Run the targeted suite with:
 pytest services/payments/tests
 ```
 
+### Gateway API
+
+`services/gateway` provides a FastAPI wrapper that stitches the pricing orchestrator, risk service, and (placeholder) execution logic into a single HTTP surface. Run it locally with uvicorn:
+
+```
+uvicorn services.gateway.app:app --reload
+```
+
+Available endpoints:
+
+- `POST /api/quotes/binding` &mdash; generate a binding quote for an exposure using supplied market data.
+- `POST /api/risk/plan` &mdash; return weekly netting buckets and execution recommendations.
+
+The current build focuses on wiring the pricing and risk flows; execution placement is stubbed for now.
+
 ## Connectors
 
 - Siigo webhook subscription helper (`services/connectors/siigo`).
