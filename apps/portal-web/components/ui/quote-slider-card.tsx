@@ -3,6 +3,7 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
+import { Badge, Button } from "ui-kit";
 
 import type { MarketDataSnapshot } from "@/lib/market-data";
 import { fetchMarketData, subscribeToMarketData } from "@/lib/market-data";
@@ -231,16 +232,16 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
                 <InfoRow label="Breakeven" value={quote.breakEvenRate.toFixed(4)} />
               </div>
             </div>
-            <button
+            <Button
               type="button"
+              variant="primary"
               className={classNames(
-                "group relative overflow-hidden rounded-2xl border border-emerald-400/60 bg-emerald-500/20 px-6 py-4 text-lg font-semibold text-emerald-100 shadow-glow transition-transform duration-200",
-                "hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
+                "relative overflow-hidden text-lg",
+                "transition-transform duration-200 hover:-translate-y-0.5"
               )}
             >
-              <span className="relative z-10">Send to bank</span>
-              <span className="absolute inset-0 z-0 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600 opacity-0 transition-opacity duration-200 group-hover:opacity-90" />
-            </button>
+              Send to bank
+            </Button>
           </div>
         </div>
 
@@ -253,12 +254,6 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
     </section>
   );
 }
-
-const Badge = ({ children }: { children: string }) => (
-  <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-200">
-    {children}
-  </span>
-);
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between">
