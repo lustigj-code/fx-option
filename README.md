@@ -41,7 +41,7 @@ python -m services.audit.cli path/to/audit.db
 
 ### Execution tooling
 
-The CME MXN option execution service lives under `services/execution`. It uses `ib-insync` to place laddered hedges and persist fills.
+The CME MXN option execution service lives under `services/execution`. It uses `ib-insync` to place laddered hedges asynchronously and persist fills. A synchronous, storage-first variant is available under `services/execution_sync` together with its own test harness while the team evaluates the two approaches.
 
 ## Connectors
 
