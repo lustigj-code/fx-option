@@ -53,5 +53,11 @@ class Settings:
             cls._config = QBOConfig.from_env()
         return cls._config
 
+    @classmethod
+    def reset(cls) -> None:
+        """Clear cached configuration (primarily used in tests)."""
+
+        cls._config = None
+
 
 __all__ = ["QBOConfig", "Settings"]

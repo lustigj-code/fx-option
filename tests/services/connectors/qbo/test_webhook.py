@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from services.connectors.qbo.app import app
 from services.connectors.qbo import webhook
+from services.connectors.qbo.config import Settings
 
 
 @pytest.fixture(autouse=True)
@@ -21,10 +22,11 @@ def setup_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("QBO_REDIRECT_URI", "https://example.com/callback")
     monkeypatch.setenv("QBO_REALM_ID", "12345")
     monkeypatch.setenv("QBO_WEBHOOK_VERIFIER_TOKEN", "token")
+    Settings.reset()
 
 
 def _sign(payload: Dict[str, Any], token: str) -> str:
-    body = json.dumps(payload).encode("utf-8")
+    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     return hmac.new(token.encode(), body, hashlib.sha256).hexdigest()
 
 
@@ -70,7 +72,7 @@ class DummyOAuth:
 async def test_verify_signature() -> None:
     token = "token"
     payload = {"foo": "bar"}
-    body = json.dumps(payload).encode("utf-8")
+    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     signature = webhook._verify_signature(body, _sign(payload, token), token)
     assert signature is True
 
