@@ -63,6 +63,8 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
   useEffect(() => {
     if (!marketData) return;
 
+    const snapshot = marketData;
+
     let cancelled = false;
     const start = performance.now();
 
@@ -71,17 +73,17 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
         setError(null);
         const { requestBindingQuote } = await import("@/lib/api");
 
-        const offsetStrike = marketData.spotRate * (1 + sliderValue / 100);
+        const offsetStrike = snapshot.spotRate * (1 + sliderValue / 100);
         const response = await requestBindingQuote({
           id: `demo-${sliderValue.toFixed(1)}`,
           currency_pair: currencyPair,
           notional: DEFAULT_NOTIONAL,
           strike: offsetStrike,
-          tenor_days: marketData.tenorDays,
+          tenor_days: snapshot.tenorDays,
           market_data: {
-            spot: marketData.spotRate,
-            implied_volatility: marketData.volatility,
-            interest_rate: marketData.domesticRate
+            spot: snapshot.spotRate,
+            implied_volatility: snapshot.volatility,
+            interest_rate: snapshot.domesticRate
           }
         });
 
@@ -92,13 +94,13 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
         const calcQuote: QuoteResult = {
           premiumPct: +(premiumRatio * 100).toFixed(2),
           premiumAmount: +priceValue.toFixed(2),
-          forwardRate: marketData.spotRate,
-          breakEvenRate: +(marketData.spotRate + premiumRatio).toFixed(6)
+          forwardRate: snapshot.spotRate,
+          breakEvenRate: +(snapshot.spotRate + premiumRatio).toFixed(6)
         };
 
         const nextCurve = generatePremiumCurve({
-          marketData,
-          tenorDays: marketData.tenorDays,
+          marketData: snapshot,
+          tenorDays: snapshot.tenorDays,
           notional: DEFAULT_NOTIONAL,
           min: 0,
           max: 10,

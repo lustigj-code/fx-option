@@ -17,18 +17,21 @@ export default async function OverviewPage() {
           <div className="section-card">
             <div className="section-title">Netting Savings</div>
             <div className="grid gap-2 text-sm text-slate-300">
-              <span>Delta saved: {Number(riskPlan.netting_savings?.delta ?? 0).toLocaleString()}</span>
-              <span>VaR saved: {Number(riskPlan.netting_savings?.var ?? 0).toLocaleString()}</span>
+              <span>Delta saved: {riskPlan.nettingSavings.delta.toLocaleString()}</span>
+              <span>VaR saved: {riskPlan.nettingSavings.var.toLocaleString()}</span>
+              <span>
+                Δ%: {riskPlan.nettingSavings.deltaPct.toFixed(2)} · VaR Δ%: {riskPlan.nettingSavings.varPct.toFixed(2)}
+              </span>
             </div>
           </div>
           <div className="section-card">
             <div className="section-title">Buckets</div>
             <ul className="space-y-2 text-sm text-slate-300">
               {riskPlan.buckets.slice(0, 3).map((bucket) => (
-                <li key={`${bucket.pair}-${bucket.week_start}`}>
-                  <span className="font-semibold text-white">{bucket.pair}</span> · delta Δ%
-                  {Number(bucket.delta_reduction_pct ?? 0).toFixed(2)} · VaR Δ%
-                  {Number(bucket.var_reduction_pct ?? 0).toFixed(2)}
+                <li key={`${bucket.pair}-${bucket.weekStart}`}>
+                  <span className="font-semibold text-white">{bucket.pair}</span> · Δ%
+                  {bucket.deltaReductionPct.toFixed(2)} · VaR Δ%
+                  {bucket.varReductionPct.toFixed(2)}
                 </li>
               ))}
             </ul>

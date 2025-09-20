@@ -286,7 +286,26 @@ export const auditLog: AuditLogEntry[] = [
   }
 ];
 
-export async function fetchRiskSummary() {
+export interface RiskBucketSummary {
+  pair: string;
+  weekStart: string;
+  deltaReductionPct: number;
+  varReductionPct: number;
+}
+
+export interface NettingSavingsSummary {
+  delta: number;
+  var: number;
+  deltaPct: number;
+  varPct: number;
+}
+
+export interface RiskPlanSummary {
+  buckets: RiskBucketSummary[];
+  nettingSavings: NettingSavingsSummary;
+}
+
+export async function fetchRiskSummary(): Promise<RiskPlanSummary | null> {
   try {
     const quotePayload = quotes.slice(0, 5).map((quote) => ({
       pair: quote.pair.replace('/', ''),
@@ -308,11 +327,28 @@ export async function fetchRiskSummary() {
       delta: order.side === 'Buy' ? order.quantity : -order.quantity
     }));
 
-    return await fetchRiskPlan({
+    const plan = await fetchRiskPlan({
       quotes: quotePayload,
       exposures: exposurePayload,
       hedges: hedgePayload
     });
+
+    const buckets = (plan.buckets ?? []).map((bucket) => ({
+      pair: String(bucket['pair'] ?? '—'),
+      weekStart: String(bucket['week_start'] ?? ''),
+      deltaReductionPct: Number(bucket['delta_reduction_pct'] ?? 0),
+      varReductionPct: Number(bucket['var_reduction_pct'] ?? 0)
+    }));
+
+    const savingsRaw = plan.netting_savings ?? {};
+    const nettingSavings: NettingSavingsSummary = {
+      delta: Number(savingsRaw['delta'] ?? 0),
+      var: Number(savingsRaw['var'] ?? 0),
+      deltaPct: Number(savingsRaw['delta_pct'] ?? 0),
+      varPct: Number(savingsRaw['var_pct'] ?? 0)
+    };
+
+    return { buckets, nettingSavings };
   } catch (error) {
     console.error('Risk summary fetch failed', error);
     return null;
