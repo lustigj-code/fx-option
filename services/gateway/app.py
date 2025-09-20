@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import sys
 
@@ -22,7 +22,41 @@ from pricing_orchestrator.interfaces import Clock, MarketDataProvider, MessageBu
 from pricing_orchestrator.orchestrator import QuoteOrchestrator
 from pricing_orchestrator.domain import QuoteComputation
 
+from services.execution_sync.events import InMemoryEventEmitter
+from services.execution_sync.ibkr import IBKRConfig
+from services.execution_sync.models import HedgeOrder, HedgePlacedEvent, HedgeRequest as SyncHedgeRequest, OptionRight, OrderSide
+from services.execution_sync.service import ExecutionService as SyncExecutionService
+from services.execution_sync.storage import OrderStorage
 from services.risk.service import RiskService
+
+EXECUTION_STORAGE_ROOT = Path(__file__).resolve().parents[2] / "data" / "execution-orders"
+
+
+class DryRunIBKRClient:
+    """Minimal IBKR client used for sandbox execution inside the gateway."""
+
+    def __init__(self) -> None:
+        self._next_order_id = 1
+
+    def ensure_connected(self) -> None:  # pragma: no cover - noop
+        return None
+
+    def execute_order(self, order: HedgeOrder) -> HedgeOrder:
+        now = datetime.now(timezone.utc)
+        order.ib_order_id = order.ib_order_id or self._next_order_id
+        self._next_order_id += 1
+        order.submitted_at = now
+        order.acknowledged_at = now
+        order.status = "FILLED"
+        if not order.fills:
+            order.fills.append(
+                {
+                    "price": order.limit_price,
+                    "qty": order.quantity,
+                    "time": now.isoformat(),
+                }
+            )
+        return order
 
 
 class MarketDataPayload(BaseModel):
@@ -59,6 +93,108 @@ class QuoteMessage(BaseModel):
 class BindingQuoteResult(BaseModel):
     quote: BindingQuoteResponse
     downstream_event: Optional[QuoteMessage] = None
+
+
+class ExecutionOrderRequest(BaseModel):
+    due_date: date
+    quantity: int = Field(..., gt=0)
+    side: Literal["BUY", "SELL"]
+    strike: Decimal = Field(..., gt=0)
+    right: Literal["CALL", "PUT", "C", "P"]
+    limit_price: Decimal = Field(..., gt=0)
+    slippage: Decimal = Field(default=Decimal("0"), ge=0)
+    ladder_layers: int = Field(default=1, gt=0)
+    strike_step: Decimal = Field(default=Decimal("0.0025"), gt=0)
+    expiry_count: int = Field(default=2, gt=0)
+    account: Optional[str] = None
+    client_order_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    def to_domain(self) -> SyncHedgeRequest:
+        side_value = self.side.upper()
+        try:
+            side = OrderSide(side_value)
+        except ValueError as exc:  # pragma: no cover - guarded by Pydantic but kept for safety
+            raise ValueError("side must be BUY or SELL") from exc
+
+        right_value = self.right.upper()
+        if right_value in {"CALL", "C"}:
+            option_right = OptionRight.CALL
+        elif right_value in {"PUT", "P"}:
+            option_right = OptionRight.PUT
+        else:  # pragma: no cover - validated via Literal but defensive
+            raise ValueError("right must be CALL/C or PUT/P")
+
+        return SyncHedgeRequest(
+            due_date=self.due_date,
+            quantity=self.quantity,
+            side=side,
+            strike=float(self.strike),
+            right=option_right,
+            limit_price=float(self.limit_price),
+            slippage=float(self.slippage),
+            ladder_layers=self.ladder_layers,
+            strike_step=float(self.strike_step),
+            expiry_count=self.expiry_count,
+            account=self.account,
+            client_order_id=self.client_order_id,
+            metadata=self.metadata,
+        )
+
+
+class ExecutionOrderResponse(BaseModel):
+    contract_month: date
+    strike: float
+    right: str
+    quantity: int
+    side: str
+    limit_price: float
+    status: str
+    ib_order_id: Optional[int]
+    client_order_id: Optional[str]
+    account: Optional[str]
+    submitted_at: Optional[datetime]
+    acknowledged_at: Optional[datetime]
+    fills: List[Dict[str, Any]]
+
+    @classmethod
+    def from_domain(cls, order: HedgeOrder) -> "ExecutionOrderResponse":
+        return cls(
+            contract_month=order.contract_month,
+            strike=order.strike,
+            right=order.right.value,
+            quantity=order.quantity,
+            side=order.side.value,
+            limit_price=order.limit_price,
+            status=order.status,
+            ib_order_id=order.ib_order_id,
+            client_order_id=order.client_order_id,
+            account=order.account,
+            submitted_at=order.submitted_at,
+            acknowledged_at=order.acknowledged_at,
+            fills=order.fills,
+        )
+
+
+class HedgePlacedPayload(BaseModel):
+    timestamp: datetime
+    side: str
+    quantity: int
+    ladder_layers: int
+
+    @classmethod
+    def from_event(cls, event: HedgePlacedEvent) -> "HedgePlacedPayload":
+        return cls(
+            timestamp=event.timestamp,
+            side=event.request.side.value,
+            quantity=event.request.quantity,
+            ladder_layers=event.request.ladder_layers,
+        )
+
+
+class ExecutionResponse(BaseModel):
+    orders: List[ExecutionOrderResponse]
+    hedge_event: Optional[HedgePlacedPayload] = None
 
 
 class QuoteInput(BaseModel):
@@ -175,6 +311,16 @@ def _orchestrate_quote(payload: ExposurePayload) -> tuple[QuoteOrchestrationResu
 def create_app() -> FastAPI:
     app = FastAPI(title="FX Option Gateway")
 
+    EXECUTION_STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
+    execution_emitter = InMemoryEventEmitter()
+    execution_storage = OrderStorage(EXECUTION_STORAGE_ROOT)
+    execution_service = SyncExecutionService(
+        ib_config=IBKRConfig(),
+        storage=execution_storage,
+        emitter=execution_emitter,
+        ib_client=DryRunIBKRClient(),
+    )
+
     @app.post("/api/quotes/binding", response_model=BindingQuoteResult)
     def binding_quote(payload: ExposurePayload) -> JSONResponse:
         result, events = _orchestrate_quote(payload)
@@ -205,6 +351,23 @@ def create_app() -> FastAPI:
         service = RiskService(quotes=quotes_payload)
         plan = service.generate_plan(exposures_payload, hedges_payload)
         return JSONResponse(content=plan, status_code=200)
+
+    @app.post("/api/execution/orders", response_model=ExecutionResponse, status_code=201)
+    def execution_orders(request: ExecutionOrderRequest) -> ExecutionResponse:
+        try:
+            hedge_request = request.to_domain()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        previous_events = len(execution_emitter.events)
+        result = execution_service.place_hedge(hedge_request)
+        new_event = None
+        events = execution_emitter.events[previous_events:]
+        if events:
+            new_event = HedgePlacedPayload.from_event(events[-1])
+
+        orders = [ExecutionOrderResponse.from_domain(order) for order in result.orders]
+        return ExecutionResponse(orders=orders, hedge_event=new_event)
 
     return app
 

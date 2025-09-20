@@ -55,3 +55,31 @@ def test_risk_plan_endpoint_returns_plan():
     data = response.json()
     assert "execution_plan" in data
     assert isinstance(data["execution_plan"], list)
+
+
+def test_execution_endpoint_returns_orders():
+    payload = {
+        "due_date": "2024-02-15",
+        "quantity": 1_000_000,
+        "side": "BUY",
+        "strike": 17.45,
+        "right": "CALL",
+        "limit_price": 0.0015,
+        "slippage": 0.0001,
+        "ladder_layers": 2,
+        "strike_step": 0.0005,
+        "expiry_count": 2,
+        "metadata": {"strategy": "overnight-ladder"}
+    }
+
+    response = client.post("/api/execution/orders", json=payload)
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert len(body["orders"]) > 0
+    first_order = body["orders"][0]
+    assert first_order["status"] == "FILLED"
+    assert first_order["side"] == "BUY"
+    assert first_order["contract_month"]
+    event = body.get("hedge_event")
+    assert event is not None
+    assert event["side"] == "BUY"
