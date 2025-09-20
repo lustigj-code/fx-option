@@ -1,0 +1,248 @@
+openapi: 3.0.3
+info:
+  title: FX Option Gateway API
+  version: 1.0.0
+  description: |
+    HTTP interface that powers pricing, quoting, and trade lifecycle flows.
+servers:
+  - url: http://localhost:4000
+    description: Local development gateway
+paths:
+  /api/v1/health:
+    get:
+      summary: Health probe
+      description: Lightweight ping endpoint used by orchestrators and monitoring.
+      responses:
+        '200':
+          description: Gateway is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/rates:
+    get:
+      summary: Retrieve current FX option volatility surface and spot rates.
+      parameters:
+        - in: query
+          name: baseCurrency
+          required: true
+          schema:
+            type: string
+            example: EUR
+        - in: query
+          name: quoteCurrency
+          required: true
+          schema:
+            type: string
+            example: USD
+        - in: query
+          name: tenor
+          schema:
+            type: string
+            example: 1M
+          description: Optional tenor filter in ISO 8601 duration format.
+      responses:
+        '200':
+          description: Collection of market data snapshots for the requested currency pair.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatesResponse'
+  /api/v1/quotes:
+    post:
+      summary: Generate indicative option quote.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        '200':
+          description: Indicative quote successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+        '422':
+          description: Invalid pricing parameters supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/trades:
+    post:
+      summary: Book a new FX option trade using a previously accepted quote.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradeRequest'
+      responses:
+        '201':
+          description: Trade successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeResponse'
+        '409':
+          description: Quote already consumed or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: ok
+        uptimeSeconds:
+          type: integer
+          example: 123
+    RatesResponse:
+      type: object
+      required:
+        - baseCurrency
+        - quoteCurrency
+        - spotRate
+        - volatilitySurface
+      properties:
+        baseCurrency:
+          type: string
+          example: EUR
+        quoteCurrency:
+          type: string
+          example: USD
+        spotRate:
+          type: number
+          format: float
+          example: 1.0985
+        volatilitySurface:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolatilityNode'
+    VolatilityNode:
+      type: object
+      required:
+        - tenor
+        - delta
+        - volatility
+      properties:
+        tenor:
+          type: string
+          description: ISO 8601 tenor label (e.g. 1M, 3M, 1Y).
+        delta:
+          type: number
+          format: float
+          description: Option delta bucket (e.g. 0.25).
+        volatility:
+          type: number
+          format: float
+          description: Implied volatility percentage.
+          example: 0.124
+    QuoteRequest:
+      type: object
+      required:
+        - baseCurrency
+        - quoteCurrency
+        - notional
+        - direction
+        - expiry
+        - optionType
+      properties:
+        baseCurrency:
+          type: string
+          example: EUR
+        quoteCurrency:
+          type: string
+          example: USD
+        notional:
+          type: number
+          format: float
+          example: 1000000
+        direction:
+          type: string
+          enum: [BUY, SELL]
+        expiry:
+          type: string
+          format: date
+          example: 2024-12-20
+        optionType:
+          type: string
+          enum: [CALL, PUT]
+        strike:
+          type: number
+          format: float
+          example: 1.1
+    QuoteResponse:
+      type: object
+      required:
+        - quoteId
+        - premium
+        - expiration
+      properties:
+        quoteId:
+          type: string
+          format: uuid
+        premium:
+          type: number
+          format: float
+          description: Premium amount denominated in the quote currency.
+          example: 12345.67
+        expiration:
+          type: string
+          format: date-time
+          description: Expiration timestamp for quote acceptance.
+        marketDataTimestamp:
+          type: string
+          format: date-time
+    TradeRequest:
+      type: object
+      required:
+        - quoteId
+        - traderId
+      properties:
+        quoteId:
+          type: string
+          format: uuid
+        traderId:
+          type: string
+          example: T12345
+    TradeResponse:
+      type: object
+      required:
+        - tradeId
+        - quoteId
+        - status
+      properties:
+        tradeId:
+          type: string
+          format: uuid
+        quoteId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED]
+        bookedAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

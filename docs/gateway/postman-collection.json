@@ -1,0 +1,116 @@
+{
+  "info": {
+    "_postman_id": "b6be9936-65ac-4bd1-8ed1-0d1c9d9d0001",
+    "name": "FX Option Gateway",
+    "description": "Sample requests for common FX Option gateway workflows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_base_url}}/api/v1/health",
+          "host": [
+            "{{gateway_base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fetch Rates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_base_url}}/api/v1/rates?baseCurrency=EUR&quoteCurrency=USD",
+          "host": [
+            "{{gateway_base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rates"
+          ],
+          "query": [
+            {
+              "key": "baseCurrency",
+              "value": "EUR"
+            },
+            {
+              "key": "quoteCurrency",
+              "value": "USD"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Quote",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"baseCurrency\": \"EUR\",\n  \"quoteCurrency\": \"USD\",\n  \"notional\": 1000000,\n  \"direction\": \"BUY\",\n  \"expiry\": \"2024-12-20\",\n  \"optionType\": \"CALL\",\n  \"strike\": 1.1\n}"
+        },
+        "url": {
+          "raw": "{{gateway_base_url}}/api/v1/quotes",
+          "host": [
+            "{{gateway_base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "quotes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Book Trade",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quoteId\": \"11111111-2222-3333-4444-555555555555\",\n  \"traderId\": \"T12345\"\n}"
+        },
+        "url": {
+          "raw": "{{gateway_base_url}}/api/v1/trades",
+          "host": [
+            "{{gateway_base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "gateway_base_url",
+      "value": "http://localhost:4000"
+    }
+  ]
+}
