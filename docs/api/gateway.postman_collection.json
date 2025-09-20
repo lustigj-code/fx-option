@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "FX Option Gateway",
+    "description": "Collection targeting the FX Option gateway used by the portal and admin apps.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_base_url}}/health",
+          "host": ["{{gateway_base_url}}"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Quotes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_base_url}}/v1/quotes?currencyPair=EURUSD",
+          "host": ["{{gateway_base_url}}"],
+          "path": ["v1", "quotes"],
+          "query": [
+            {
+              "key": "currencyPair",
+              "value": "EURUSD"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Request Quote",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currencyPair\": \"EURUSD\",\n  \"side\": \"BUY\",\n  \"notional\": 1000000,\n  \"tenor\": \"3M\",\n  \"optionType\": \"CALL\"\n}"
+        },
+        "url": {
+          "raw": "{{gateway_base_url}}/v1/quotes",
+          "host": ["{{gateway_base_url}}"],
+          "path": ["v1", "quotes"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Book Trade",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quoteId\": \"q-01H8G7SV3C4YZ9\",\n  \"book\": \"LDN_EQD\"\n}"
+        },
+        "url": {
+          "raw": "{{gateway_base_url}}/v1/trades",
+          "host": ["{{gateway_base_url}}"],
+          "path": ["v1", "trades"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Trade",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_base_url}}/v1/trades/{{trade_id}}",
+          "host": ["{{gateway_base_url}}"],
+          "path": ["v1", "trades", "{{trade_id}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Rates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_base_url}}/v1/rates",
+          "host": ["{{gateway_base_url}}"],
+          "path": ["v1", "rates"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "gateway_base_url",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "trade_id",
+      "value": "t-01H8G7WABCXYZ"
+    }
+  ]
+}
