@@ -17,6 +17,7 @@ from .orchestrator import (
     QuoteOrchestrator,
     SLAExceededError,
 )
+from .pricing_engine import BlackScholesPricingEngine
 
 __all__ = [
     "ExposureCreated",
@@ -32,4 +33,5 @@ __all__ = [
     "QUOTE_VALIDITY_SECONDS",
     "QuoteOrchestrator",
     "SLAExceededError",
+    "BlackScholesPricingEngine",
 ]

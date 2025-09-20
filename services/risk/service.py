@@ -92,9 +92,13 @@ class RiskService:
         pre_var = sum(metric.pre_var for metric in metrics.values())
         post_var = sum(metric.post_var for metric in metrics.values())
 
+        delta_savings = pre_delta - post_delta
+        var_savings = pre_var - post_var
         return {
-            "delta": pre_delta - post_delta,
-            "var": pre_var - post_var,
+            "delta": delta_savings,
+            "var": var_savings,
+            "delta_pct": (delta_savings / pre_delta) if pre_delta else 0.0,
+            "var_pct": (var_savings / pre_var) if pre_var else 0.0,
         }
 
     def _coerce_quotes(

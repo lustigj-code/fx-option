@@ -17,6 +17,7 @@ from pricing_orchestrator.orchestrator import (
     QuoteOrchestrator,
     SLAExceededError,
 )
+from pricing_orchestrator.pricing_engine import BlackScholesPricingEngine
 
 
 class FakeClock:
@@ -156,3 +157,33 @@ def test_latency_sla_violation_raises(monkeypatch, orchestrator_dependencies):
 
     assert repository.saved_quotes, "quote should still be persisted before SLA enforcement"
     assert message_bus.events, "event should be emitted before SLA enforcement"
+
+
+def test_black_scholes_engine_prices_option(monkeypatch):
+    now = datetime(2024, 1, 1, 12, 0, 0)
+    market_data = MarketDataSnapshot(
+        spot=Decimal("1.10"),
+        implied_volatility=Decimal("0.20"),
+        interest_rate=Decimal("0.01"),
+    )
+    provider = FakeMarketDataProvider(market_data)
+    repository = FakeQuoteRepository()
+    bus = FakeMessageBus()
+    clock = FakeClock(now)
+    engine = BlackScholesPricingEngine()
+
+    orchestrator = QuoteOrchestrator(
+        market_data_provider=provider,
+        pricing_engine=engine,
+        quote_repository=repository,
+        message_bus=bus,
+        clock=clock,
+    )
+
+    monkeypatch.setattr("pricing_orchestrator.orchestrator.perf_counter", lambda: 0.0)
+    result = orchestrator.handle_exposure_created(make_exposure("exp-test"))
+
+    assert result.succeeded()
+    quote = result.quote
+    assert quote is not None
+    assert quote.price > 0

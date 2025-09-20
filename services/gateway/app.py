@@ -21,6 +21,7 @@ from pricing_orchestrator.domain import ExposureCreated, MarketDataSnapshot, Quo
 from pricing_orchestrator.interfaces import Clock, MarketDataProvider, MessageBus, PricingEngine, QuoteRepository
 from pricing_orchestrator.orchestrator import QuoteOrchestrator
 from pricing_orchestrator.domain import QuoteComputation
+from pricing_orchestrator.pricing_engine import BlackScholesPricingEngine
 
 from services.execution_sync.events import InMemoryEventEmitter
 from services.execution_sync.ibkr import IBKRConfig
@@ -82,6 +83,7 @@ class BindingQuoteResponse(BaseModel):
     cap: Decimal
     safety_buffer_seconds: int
     latency_ms: float
+    pricing_model: str
 
 
 class QuoteMessage(BaseModel):
@@ -230,24 +232,6 @@ class InMemoryMarketDataProvider(MarketDataProvider):
             raise RuntimeError(f"no market data found for exposure {exposure_id}") from exc
 
 
-class SimplePricingEngine(PricingEngine):
-    """Deterministic pricing stub mirroring the portal's quote heuristics."""
-
-    def price(self, request):
-        tenor_years = Decimal(request.exposure.tenor_days) / Decimal(365)
-        base_premium = request.implied_volatility * Decimal("0.035")
-        carry = (request.interest_rate or Decimal(0)) * tenor_years
-        premium_ratio = Decimal("0.01") + base_premium + carry
-        premium_ratio = max(premium_ratio, Decimal("0.0005"))
-        price = request.spot * premium_ratio
-        return QuoteComputation(
-            exposure_id=request.exposure.exposure_id,
-            price=price.quantize(Decimal("0.0001")),
-            cap=request.cap,
-            implied_volatility=request.implied_volatility,
-        )
-
-
 class InMemoryQuoteRepository(QuoteRepository):
     def __init__(self) -> None:
         self._quotes: Dict[str, Quote] = {}
@@ -297,7 +281,7 @@ def _orchestrate_quote(payload: ExposurePayload) -> tuple[QuoteOrchestrationResu
     bus = InMemoryBus()
     orchestrator = QuoteOrchestrator(
         market_data_provider=provider,
-        pricing_engine=SimplePricingEngine(),
+        pricing_engine=BlackScholesPricingEngine(),
         quote_repository=repo,
         message_bus=bus,
         clock=UTCClock(),
@@ -336,6 +320,7 @@ def create_app() -> FastAPI:
             cap=quote.cap,
             safety_buffer_seconds=quote.safety_buffer_seconds,
             latency_ms=result.latency_ms,
+            pricing_model="black_scholes",
         )
         downstream = events[0] if events else None
         return JSONResponse(

@@ -5,6 +5,8 @@ out
 .env
 .env.local
 .venv/
+data/
+.venv/
 
 __pycache__/
 *.py[cod]

@@ -31,6 +31,7 @@ def test_binding_quote_endpoint_generates_quote():
     assert quote["exposure_id"] == "exp-1"
     assert Decimal(quote["price"]) > Decimal("0")
     assert "valid_until" in quote
+    assert quote["pricing_model"] == "black_scholes"
 
 
 def test_risk_plan_endpoint_returns_plan():

@@ -52,6 +52,9 @@ class BucketMetrics:
     pre_var: float
     post_var: float
     distribution: Dict[str, float]
+    delta_reduction_pct: float
+    var_reduction_pct: float
+    average_tenor_days: int
 
 
 def week_bounds(target_date: date) -> Tuple[date, date]:
@@ -103,6 +106,14 @@ def build_bucket_metrics(
         if exposure_bucket.weight == 0 and hedge_bucket.weight > 0:
             distribution = hedge_bucket.normalised_distribution()
 
+        delta_reduction_pct = 0.0
+        if abs(pre_delta) > 1e-9:
+            delta_reduction_pct = (abs(pre_delta) - abs(post_delta)) / abs(pre_delta)
+
+        var_reduction_pct = 0.0
+        if pre_var > 1e-9:
+            var_reduction_pct = (pre_var - post_var) / pre_var
+
         metrics[(pair, week_start)] = BucketMetrics(
             pair=pair,
             week_start=week_start,
@@ -112,6 +123,9 @@ def build_bucket_metrics(
             pre_var=pre_var,
             post_var=post_var,
             distribution=distribution,
+            delta_reduction_pct=delta_reduction_pct,
+            var_reduction_pct=var_reduction_pct,
+            average_tenor_days=avg_days_combined,
         )
 
     return metrics

@@ -67,6 +67,9 @@ def test_generate_plan_creates_weekly_buckets(sample_quotes):
     # Pre and post VaR should be positive and the hedge should reduce it.
     assert eurusd_bucket["pre_var"] > 0
     assert eurusd_bucket["post_var"] < eurusd_bucket["pre_var"]
+    assert "delta_reduction_pct" in eurusd_bucket
+    assert "var_reduction_pct" in eurusd_bucket
+    assert "average_tenor_days" in eurusd_bucket
 
     execution_items = plan["execution_plan"]
     assert len(execution_items) == 1
@@ -84,6 +87,8 @@ def test_generate_plan_creates_weekly_buckets(sample_quotes):
     savings = plan["netting_savings"]
     assert savings["delta"] > 0
     assert savings["var"] > 0
+    assert "delta_pct" in savings
+    assert "var_pct" in savings
 
 
 def test_json_plan_and_display(sample_quotes):
