@@ -1,15 +1,40 @@
 import Link from 'next/link';
 
 import { RealtimeCounters } from '@/components/RealtimeCounters';
-import { auditLog, events, hedgeOrders, payments, quotes } from '@/lib/data';
+import { auditLog, events, fetchRiskSummary, hedgeOrders, payments, quotes } from '@/lib/data';
 import { formatAmount, formatDate, formatNotional } from '@/lib/format';
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const riskPlan = await fetchRiskSummary();
   return (
     <div className="space-y-10">
       <section>
         <RealtimeCounters />
       </section>
+
+      {riskPlan ? (
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="section-card">
+            <div className="section-title">Netting Savings</div>
+            <div className="grid gap-2 text-sm text-slate-300">
+              <span>Delta saved: {Number(riskPlan.netting_savings?.delta ?? 0).toLocaleString()}</span>
+              <span>VaR saved: {Number(riskPlan.netting_savings?.var ?? 0).toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="section-card">
+            <div className="section-title">Buckets</div>
+            <ul className="space-y-2 text-sm text-slate-300">
+              {riskPlan.buckets.slice(0, 3).map((bucket) => (
+                <li key={`${bucket.pair}-${bucket.week_start}`}>
+                  <span className="font-semibold text-white">{bucket.pair}</span> · delta Δ%
+                  {Number(bucket.delta_reduction_pct ?? 0).toFixed(2)} · VaR Δ%
+                  {Number(bucket.var_reduction_pct ?? 0).toFixed(2)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       <section className="section-card">
         <div className="section-title">

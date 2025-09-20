@@ -29,8 +29,9 @@ from services.execution_sync.models import HedgeOrder, HedgePlacedEvent, HedgeRe
 from services.execution_sync.service import ExecutionService as SyncExecutionService
 from services.execution_sync.storage import OrderStorage
 from services.risk.service import RiskService
+from services.gateway.settings import GatewaySettings, get_settings
 
-EXECUTION_STORAGE_ROOT = Path(__file__).resolve().parents[2] / "data" / "execution-orders"
+DEFAULT_EXECUTION_ROOT = Path(__file__).resolve().parents[2] / "data" / "execution-orders"
 
 
 class DryRunIBKRClient:
@@ -292,17 +293,20 @@ def _orchestrate_quote(payload: ExposurePayload) -> tuple[QuoteOrchestrationResu
     return result, bus.events
 
 
-def create_app() -> FastAPI:
+def create_app(settings: GatewaySettings | None = None) -> FastAPI:
     app = FastAPI(title="FX Option Gateway")
 
-    EXECUTION_STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
+    gateway_settings = settings or get_settings()
+
+    execution_root = gateway_settings.storage_dir or DEFAULT_EXECUTION_ROOT
+    execution_root.mkdir(parents=True, exist_ok=True)
     execution_emitter = InMemoryEventEmitter()
-    execution_storage = OrderStorage(EXECUTION_STORAGE_ROOT)
+    execution_storage = OrderStorage(execution_root)
     execution_service = SyncExecutionService(
         ib_config=IBKRConfig(),
         storage=execution_storage,
         emitter=execution_emitter,
-        ib_client=DryRunIBKRClient(),
+        ib_client=DryRunIBKRClient() if gateway_settings.dry_run else None,
     )
 
     @app.post("/api/quotes/binding", response_model=BindingQuoteResult)

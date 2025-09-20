@@ -19,16 +19,35 @@ pnpm --filter admin dev
 
 ## Python services
 
-Install shared dependencies with extras for testing:
+Install shared dependencies:
 
 ```bash
-pip install -e .[dev]
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 Run the full pytest suite:
 
 ```bash
 pytest
+```
+
+### Gateway settings
+
+Environment variables accepted by the gateway service:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `GATEWAY_STORAGE_DIR` | Directory for persisted execution payloads | `./data/execution-orders` |
+| `GATEWAY_DRY_RUN` | Set to `false` to connect to IBKR | `true` |
+| `GATEWAY_HOST` | Host interface for the CLI runner | `0.0.0.0` |
+| `GATEWAY_PORT` | Port used by the CLI runner | `8000` |
+
+Run the gateway via the CLI entry point:
+
+```bash
+python -m services.gateway
 ```
 
 ### Audit verification CLI
@@ -75,8 +94,7 @@ Available endpoints:
 
 - `POST /api/quotes/binding` &mdash; generate a binding quote for an exposure using supplied market data.
 - `POST /api/risk/plan` &mdash; return weekly netting buckets and execution recommendations.
-
-The current build focuses on wiring the pricing and risk flows; execution placement is stubbed for now.
+- `POST /api/execution/orders` &mdash; submit laddered hedges (dry-run by default).
 
 ## Connectors
 
@@ -84,3 +102,16 @@ The current build focuses on wiring the pricing and risk flows; execution placem
 - QuickBooks Online connector and webhook handler (`services/connectors/qbo`).
 
 Refer to the docs in `docs/connectors/` for onboarding notes.
+
+## Running the full stack
+
+Use the helper script to start the gateway, portal, and admin apps locally:
+
+```bash
+./scripts/run-dev.sh
+```
+
+Environment variables used by the front-end apps:
+
+- `NEXT_PUBLIC_API_BASE_URL` – base URL for the portal gateway (default `http://localhost:8000`).
+- `ADMIN_API_BASE_URL` – base URL for the admin dashboards (default `http://localhost:8000`).

@@ -1,3 +1,5 @@
+import { fetchRiskPlan } from './api';
+
 export type EventSeverity = 'info' | 'warning' | 'critical';
 
 export interface ControlRoomEvent {
@@ -283,3 +285,36 @@ export const auditLog: AuditLogEntry[] = [
     ip: '10.18.30.7'
   }
 ];
+
+export async function fetchRiskSummary() {
+  try {
+    const quotePayload = quotes.slice(0, 5).map((quote) => ({
+      pair: quote.pair.replace('/', ''),
+      spot: quote.price,
+      volatility: 0.15
+    }));
+
+    const exposurePayload = quotes.map((quote) => ({
+      pair: quote.pair.replace('/', ''),
+      expiry: quote.expiry.split('T')[0],
+      side: quote.side.toLowerCase(),
+      delta: quote.side === 'Buy' ? quote.notional : -quote.notional
+    }));
+
+    const hedgePayload = hedgeOrders.map((order) => ({
+      pair: order.symbol.replace('/', ''),
+      expiry: order.placedAt.split('T')[0],
+      side: order.side.toLowerCase(),
+      delta: order.side === 'Buy' ? order.quantity : -order.quantity
+    }));
+
+    return await fetchRiskPlan({
+      quotes: quotePayload,
+      exposures: exposurePayload,
+      hedges: hedgePayload
+    });
+  } catch (error) {
+    console.error('Risk summary fetch failed', error);
+    return null;
+  }
+}

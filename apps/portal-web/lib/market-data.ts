@@ -9,10 +9,10 @@ export interface MarketDataSnapshot {
 
 const BASE_SNAPSHOT: MarketDataSnapshot = {
   spotRate: 1.0875,
-  tenorDays: 45,
+  tenorDays: 30,
   volatility: 0.14,
-  domesticRate: 0.048,
-  foreignRate: 0.018,
+  domesticRate: 0.02,
+  foreignRate: 0.01,
   timestamp: Date.now()
 };
 
@@ -25,11 +25,31 @@ function jitter(value: number, intensity: number) {
 }
 
 export async function fetchMarketData(): Promise<MarketDataSnapshot> {
-  return new Promise((resolve) => {
-    window.requestAnimationFrame(() => {
-      resolve({ ...BASE_SNAPSHOT, timestamp: Date.now() });
+  try {
+    const { requestBindingQuote } = await import('./api');
+    await requestBindingQuote({
+      id: 'demo-exposure',
+      currency_pair: 'USD/MXN',
+      notional: 1_000_000,
+      strike: BASE_SNAPSHOT.spotRate,
+      tenor_days: BASE_SNAPSHOT.tenorDays,
+      market_data: {
+        spot: BASE_SNAPSHOT.spotRate,
+        implied_volatility: BASE_SNAPSHOT.volatility,
+        interest_rate: BASE_SNAPSHOT.domesticRate
+      }
     });
-  });
+    return {
+      spotRate: BASE_SNAPSHOT.spotRate,
+      tenorDays: BASE_SNAPSHOT.tenorDays,
+      volatility: BASE_SNAPSHOT.volatility,
+      domesticRate: BASE_SNAPSHOT.domesticRate,
+      foreignRate: BASE_SNAPSHOT.foreignRate,
+      timestamp: Date.now()
+    };
+  } catch {
+    return { ...BASE_SNAPSHOT, timestamp: Date.now() };
+  }
 }
 
 export function subscribeToMarketData(listener: Listener) {

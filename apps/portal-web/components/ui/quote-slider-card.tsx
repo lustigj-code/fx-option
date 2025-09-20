@@ -6,13 +6,12 @@ import classNames from "classnames";
 import { Badge, Button } from "ui-kit";
 
 import type { MarketDataSnapshot } from "@/lib/market-data";
-import { fetchMarketData, subscribeToMarketData } from "@/lib/market-data";
+import { fetchMarketData } from "@/lib/market-data";
 import {
   describeLatency,
   formatCurrency,
   formatPercent,
   generatePremiumCurve,
-  priceQuote,
   type PremiumCurvePoint,
   type QuoteResult
 } from "@/lib/quote-pricing";
@@ -35,6 +34,7 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
   const [curve, setCurve] = useState<PremiumCurvePoint[]>([]);
   const [sliderValue, setSliderValue] = useState<number>(5);
   const [latency, setLatency] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRangeChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSliderValue(parseFloat(event.target.value));
@@ -43,48 +43,84 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
   useEffect(() => {
     let mounted = true;
 
-    fetchMarketData().then((snapshot) => {
-      if (mounted) {
-        setMarketData(snapshot);
-      }
-    });
-
-    const unsubscribe = subscribeToMarketData((snapshot) => {
-      if (mounted) {
-        setMarketData(snapshot);
-      }
-    });
+    fetchMarketData()
+      .then((snapshot) => {
+        if (mounted) {
+          setMarketData(snapshot);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setMarketData(null);
+        }
+      });
 
     return () => {
       mounted = false;
-      unsubscribe();
     };
   }, []);
 
   useEffect(() => {
     if (!marketData) return;
 
+    let cancelled = false;
     const start = performance.now();
-    const nextQuote = priceQuote({
-      marketData,
-      notional: DEFAULT_NOTIONAL,
-      strikeOffsetPct: sliderValue,
-      tenorDays: marketData.tenorDays
-    });
-    const nextCurve = generatePremiumCurve({
-      marketData,
-      tenorDays: marketData.tenorDays,
-      notional: DEFAULT_NOTIONAL,
-      min: 0,
-      max: 10,
-      resolution: 31
-    });
-    const duration = performance.now() - start;
 
-    setQuote(nextQuote);
-    setCurve(nextCurve);
-    setLatency(duration);
-  }, [marketData, sliderValue]);
+    async function loadQuote() {
+      try {
+        setError(null);
+        const { requestBindingQuote } = await import("@/lib/api");
+
+        const offsetStrike = marketData.spotRate * (1 + sliderValue / 100);
+        const response = await requestBindingQuote({
+          id: `demo-${sliderValue.toFixed(1)}`,
+          currency_pair: currencyPair,
+          notional: DEFAULT_NOTIONAL,
+          strike: offsetStrike,
+          tenor_days: marketData.tenorDays,
+          market_data: {
+            spot: marketData.spotRate,
+            implied_volatility: marketData.volatility,
+            interest_rate: marketData.domesticRate
+          }
+        });
+
+        if (cancelled) return;
+
+        const priceValue = typeof response.price === "string" ? Number(response.price) : response.price;
+        const premiumRatio = priceValue / DEFAULT_NOTIONAL;
+        const calcQuote: QuoteResult = {
+          premiumPct: +(premiumRatio * 100).toFixed(2),
+          premiumAmount: +priceValue.toFixed(2),
+          forwardRate: marketData.spotRate,
+          breakEvenRate: +(marketData.spotRate + premiumRatio).toFixed(6)
+        };
+
+        const nextCurve = generatePremiumCurve({
+          marketData,
+          tenorDays: marketData.tenorDays,
+          notional: DEFAULT_NOTIONAL,
+          min: 0,
+          max: 10,
+          resolution: 31
+        });
+
+        setQuote(calcQuote);
+        setCurve(nextCurve);
+        setLatency(performance.now() - start);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Unable to reach pricing service");
+        }
+      }
+    }
+
+    loadQuote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [marketData, sliderValue, currencyPair]);
 
   const selectedPoint = useMemo(() => {
     if (!curve.length) return null;
@@ -147,6 +183,11 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
 
         <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
           <div className="flex flex-col gap-6">
+            {error ? (
+              <div className="rounded-3xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+                {error}
+              </div>
+            ) : null}
             <div className="rounded-3xl border border-white/5 bg-white/5 p-6">
               <div className="flex items-center justify-between text-sm text-slate-300">
                 <span className="font-medium text-white">K offset</span>

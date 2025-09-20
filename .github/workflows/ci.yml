@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.0
+          run_install: false
+
+      - name: pnpm install
+        run: pnpm install
+
+      - name: Build UI kit
+        run: pnpm --filter ui-kit build
+
+      - name: Lint & build portal
+        run: |
+          pnpm --filter portal-web lint
+          pnpm --filter portal-web build
+
+      - name: Lint & build admin
+        run: |
+          pnpm --filter admin lint
+          pnpm --filter admin build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python requirements
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Run pytest suites
+        run: |
+          source .venv/bin/activate
+          PYTHONPATH=. pytest services/pricing-orchestrator/tests/test_orchestrator.py
+          PYTHONPATH=. pytest services/gateway/tests/test_gateway.py
+          PYTHONPATH=. pytest tests/test_risk_service.py
+          PYTHONPATH=. pytest services/payments/tests/test_payments.py
+          PYTHONPATH=. pytest tests/services/execution_sync
