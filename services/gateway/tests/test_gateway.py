@@ -26,8 +26,7 @@ def test_binding_quote_endpoint_generates_quote():
 
     response = client.post("/api/quotes/binding", json=payload)
     assert response.status_code == 200, response.text
-    data = response.json()
-    quote = data["quote"]
+    quote = response.json()
     assert quote["exposure_id"] == "exp-1"
     assert Decimal(quote["price"]) > Decimal("0")
     assert "valid_until" in quote
@@ -56,6 +55,8 @@ def test_risk_plan_endpoint_returns_plan():
     data = response.json()
     assert "execution_plan" in data
     assert isinstance(data["execution_plan"], list)
+    assert "buckets" in data
+    assert isinstance(data["buckets"], list)
 
 
 def test_execution_endpoint_returns_orders():
