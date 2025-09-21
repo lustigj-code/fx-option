@@ -21,9 +21,19 @@
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
+    "types": [
+      "jest",
+      "node"
+    ],
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@shared/auth": [
+        "../shared/auth"
+      ],
+      "@shared/auth/*": [
+        "../shared/auth/*"
       ]
     },
     "plugins": [
