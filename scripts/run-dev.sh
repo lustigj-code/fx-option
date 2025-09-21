@@ -20,10 +20,16 @@ trap 'jobs -p | xargs -r kill' INT TERM EXIT
 uvicorn services.gateway.app:app --reload --host 127.0.0.1 --port 8000 &
 GATEWAY_PID=$!
 
-env NEXT_PUBLIC_API_BASE_URL="$API_BASE_URL" pnpm --filter portal-web dev -- --hostname 0.0.0.0 &
+(
+  cd apps/portal-web
+  env NEXT_PUBLIC_API_BASE_URL="$API_BASE_URL" HOST=0.0.0.0 PORT=3000 pnpm dev
+) &
 PORTAL_PID=$!
 
-env ADMIN_API_BASE_URL="$API_BASE_URL" pnpm --filter admin dev -- --hostname 0.0.0.0 &
+(
+  cd apps/admin
+  env ADMIN_API_BASE_URL="$API_BASE_URL" HOST=0.0.0.0 PORT=3001 pnpm dev
+) &
 ADMIN_PID=$!
 
 wait $GATEWAY_PID $PORTAL_PID $ADMIN_PID
