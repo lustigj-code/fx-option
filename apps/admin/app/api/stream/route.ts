@@ -1,4 +1,5 @@
-import { auditLog, hedgeOrders, payments, quotes } from '@/lib/data';
+import { hedgeOrders, payments, quotes } from '@/lib/data';
+import { eventsToday, fetchAuditEvents } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,25 +17,41 @@ function randomize(base: number, variance: number) {
   return Math.max(0, base + delta);
 }
 
-export function GET() {
+export async function GET() {
   const encoder = new TextEncoder();
   let interval: ReturnType<typeof setInterval> | undefined;
 
   const stream = new ReadableStream({
     start(controller) {
-      const sendEvent = () => {
+      let baselineEvents: Awaited<ReturnType<typeof fetchAuditEvents>> = [];
+
+      const sendEvent = async () => {
+        try {
+          baselineEvents = await fetchAuditEvents(50);
+        } catch (error) {
+          console.error('[admin] failed to refresh audit metrics', error);
+        }
         const payload = {
           quotesActive: randomize(quotes.filter((quote) => quote.status === 'Open').length, 2),
           paymentsPending: randomize(payments.filter((payment) => payment.status === 'Pending').length, 1),
           hedgesOpen: randomize(hedgeOrders.filter((order) => order.status !== 'Hedged').length, 1),
-          auditsToday: randomize(auditLog.length, 2),
+          auditsToday: randomize(eventsToday(baselineEvents), 2),
           lastUpdated: formatTime()
         };
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
       };
 
-      sendEvent();
-      interval = setInterval(sendEvent, 5000);
+      void (async () => {
+        try {
+          baselineEvents = await fetchAuditEvents(50);
+        } catch (error) {
+          console.error('[admin] failed to load initial audit metrics', error);
+        }
+        await sendEvent();
+        interval = setInterval(() => {
+          void sendEvent();
+        }, 5000);
+      })();
     },
     cancel() {
       if (interval) {

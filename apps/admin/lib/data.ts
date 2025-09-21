@@ -45,16 +45,6 @@ export interface HedgeOrder {
   placedAt: string;
 }
 
-export interface AuditLogEntry {
-  id: string;
-  actor: string;
-  action: string;
-  entity: string;
-  metadata: string;
-  createdAt: string;
-  ip: string;
-}
-
 export const events: ControlRoomEvent[] = [
   {
     id: 'evt-9012',
@@ -244,45 +234,6 @@ export const hedgeOrders: HedgeOrder[] = [
     status: 'Working',
     desk: 'Sydney',
     placedAt: '2024-05-12T08:47:00Z'
-  }
-];
-
-export const auditLog: AuditLogEntry[] = [
-  {
-    id: 'AUD-9931',
-    actor: 'sara@fxoption.com',
-    action: 'Updated settlement instructions',
-    entity: 'PMT-441',
-    metadata: 'Changed nostro account to CITI-US-001',
-    createdAt: '2024-05-12T08:21:00Z',
-    ip: '10.18.31.8'
-  },
-  {
-    id: 'AUD-9932',
-    actor: 'liam@fxoption.com',
-    action: 'Manual hedge override',
-    entity: 'QT-2209',
-    metadata: 'Adjusted hedge ratio from 0.95 to 0.98',
-    createdAt: '2024-05-12T08:28:00Z',
-    ip: '10.18.31.14'
-  },
-  {
-    id: 'AUD-9933',
-    actor: 'auditor@clientbank.com',
-    action: 'Viewed payment details',
-    entity: 'PMT-444',
-    metadata: 'Read-only access granted via audit mode',
-    createdAt: '2024-05-12T08:33:00Z',
-    ip: '10.18.32.5'
-  },
-  {
-    id: 'AUD-9934',
-    actor: 'priya@fxoption.com',
-    action: 'RFQ expiry extension',
-    entity: 'QT-2207',
-    metadata: 'Expiry moved from 2m to 5m',
-    createdAt: '2024-05-12T08:45:00Z',
-    ip: '10.18.30.7'
   }
 ];
 
