@@ -1,37 +1,55 @@
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
+import type { Role } from '@shared/auth';
 
-const PUBLIC_PATHS = ['/api/login', '/api/logout'];
+const LOGIN_PATH = '/login';
+const ACCESS_DENIED_PATH = '/access-denied';
+const MFA_PATH = '/mfa';
+const PUBLIC_PATHS = new Set<string>([LOGIN_PATH, '/api/auth']);
+const PRIVILEGED_ROLES: Role[] = ['compliance_officer', 'admin'];
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = verifySessionToken(token);
+const parseRoles = (value: unknown): Role[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is Role => typeof entry === 'string');
+};
 
-  if (pathname === '/login') {
-    if (session) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
+const hasPrivilege = (roles: Role[]): boolean => PRIVILEGED_ROLES.some((role) => roles.includes(role));
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith('/api/auth') || pathname.startsWith('/_next')) {
     return NextResponse.next();
   }
 
-  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
-    return NextResponse.next();
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!token) {
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = LOGIN_PATH;
+    loginUrl.searchParams.set('callbackUrl', req.nextUrl.href);
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (!session) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  const roles = parseRoles(token.roles);
+  if (!hasPrivilege(roles)) {
+    const deniedUrl = req.nextUrl.clone();
+    deniedUrl.pathname = ACCESS_DENIED_PATH;
+    return NextResponse.redirect(deniedUrl);
+  }
+
+  if (token.mfaRequired && !token.mfaVerified) {
+    const mfaUrl = req.nextUrl.clone();
+    mfaUrl.pathname = MFA_PATH;
+    mfaUrl.searchParams.set('callbackUrl', req.nextUrl.href);
+    return NextResponse.redirect(mfaUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+  matcher: ['/((?!api/|_next/|favicon.ico).*)'],
 };

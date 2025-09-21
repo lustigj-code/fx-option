@@ -9,4 +9,5 @@ export * from './components/Stat';
 export * from './components/Table';
 export * from './components/TestimonialStrip';
 export * from './components/Toast';
+export * from './components/auth';
 export * from './styles';

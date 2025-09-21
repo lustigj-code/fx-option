@@ -78,4 +78,5 @@ specs/003-implement-secure-authentication/
 - [x] Research
 - [x] Data model
 - [x] Quickstart
-- [ ] Contracts (TODO)
+- [x] Contracts
+- [x] UI kit auth surfaces (login, access denied, MFA prompt) wired for portal/admin (T023)

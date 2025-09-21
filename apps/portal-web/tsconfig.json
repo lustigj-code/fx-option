@@ -19,6 +19,10 @@
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
+    "types": [
+      "jest",
+      "node"
+    ],
     "paths": {
       "@/components/*": [
         "./components/*"
@@ -28,6 +32,12 @@
       ],
       "@/styles/*": [
         "./app/*"
+      ],
+      "@shared/auth": [
+        "../shared/auth"
+      ],
+      "@shared/auth/*": [
+        "../shared/auth/*"
       ],
       "ui-kit": [
         "../../packages/ui-kit/dist"
