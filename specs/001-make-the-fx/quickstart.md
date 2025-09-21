@@ -6,6 +6,20 @@
 - FastAPI gateway running locally: `uvicorn services.gateway.app:app --reload` (dry-run mode default).
 - `.env.local` files populated for portal/admin (NextAuth secrets, API base URL).
 
+## Environment Variables
+Populate `apps/portal-web/.env.local` using the example file. Required keys:
+
+- `NEXTAUTH_SECRET` – random string used to encrypt NextAuth JWT/session data.
+- `NEXTAUTH_URL` – public URL of the portal instance (defaults to `http://localhost:3000`).
+- `PORTAL_DEMO_USERNAME` / `PORTAL_DEMO_PASSWORD` – seeded credential pair for the credentials provider.
+- `PORTAL_AUTH_DEMO_MODE` – set to `true` to enable demo sign-in bypass for local testing.
+- `NEXT_PUBLIC_API_BASE_URL` – FastAPI gateway base URL consumed by route handlers and React Query.
+- `PORTAL_GATEWAY_API_KEY` – bearer token forwarded from Next.js route handlers to the gateway.
+- `PORTAL_AUDIT_BASE_URL` – audit service base URL used for compliance logging hooks.
+- `PORTAL_AUDIT_API_KEY` – secret used to authenticate audit log submissions.
+- `NEXT_PUBLIC_OTEL_COLLECTOR_URL` – OTLP/HTTP collector endpoint for OpenTelemetry browser exports.
+- `NEXT_PUBLIC_OTEL_SERVICE_NAME` – logical service name used in telemetry payloads.
+
 ## Setup
 1. Install JS deps: `pnpm install`.
 2. Install Python deps: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`.
