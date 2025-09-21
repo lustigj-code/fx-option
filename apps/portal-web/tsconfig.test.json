@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist-tests",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "ui-kit": ["./tests/stubs/ui-kit"],
+      "ui-kit/*": ["./tests/stubs/ui-kit"],
+      "@shared/api": ["../shared/api"],
+      "@shared/api/*": ["../shared/api/*"],
+      "@opentelemetry/api": ["../../vendor/@opentelemetry/api/index.d.ts"]
+    }
+  },
+  "include": [
+    "components/ui/__tests__/**/*.ts",
+    "components/ui/__tests__/**/*.tsx",
+    "components/ui/**/*.ts",
+    "components/ui/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "tests/stubs/**/*.ts",
+    "tests/stubs/**/*.tsx",
+    "tests/types/**/*.d.ts",
+    "../shared/api/**/*.ts",
+    "../../specs/002-wire-portal-and/contracts/**/*.ts",
+    "../shared/types/**/*.d.ts"
+  ]
+}

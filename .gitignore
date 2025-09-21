@@ -1,6 +1,9 @@
 node_modules
 .next
 out
+dist/
+dist-tests/
+**/dist-tests/
 .DS_Store
 .env
 .env.local

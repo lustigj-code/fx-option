@@ -315,16 +315,18 @@ export async function fetchRiskSummary(): Promise<RiskPlanSummary | null> {
 
     const exposurePayload = quotes.map((quote) => ({
       pair: quote.pair.replace('/', ''),
-      expiry: quote.expiry.split('T')[0],
+      expiry: new Date(quote.expiry),
       side: quote.side.toLowerCase(),
-      delta: quote.side === 'Buy' ? quote.notional : -quote.notional
+      delta: quote.side === 'Buy' ? quote.notional : -quote.notional,
+      k_distribution: undefined
     }));
 
     const hedgePayload = hedgeOrders.map((order) => ({
       pair: order.symbol.replace('/', ''),
-      expiry: order.placedAt.split('T')[0],
+      expiry: new Date(order.placedAt),
       side: order.side.toLowerCase(),
-      delta: order.side === 'Buy' ? order.quantity : -order.quantity
+      delta: order.side === 'Buy' ? order.quantity : -order.quantity,
+      k_distribution: undefined
     }));
 
     const plan = await fetchRiskPlan({

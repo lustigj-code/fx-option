@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "rm -rf dist-tests && tsc --project tsconfig.test.json && NODE_ENV=test NODE_PATH=../../apps/admin/node_modules:../../vendor node ../../node_modules/.pnpm/jest@29.7.0_@types+node@20.12.7/node_modules/jest/bin/jest.js --config jest.config.cjs"
   },
   "dependencies": {
     "next": "14.2.3",

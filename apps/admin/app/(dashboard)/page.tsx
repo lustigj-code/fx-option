@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { RealtimeCounters } from '@/components/RealtimeCounters';
 import { auditLog, events, fetchRiskSummary, hedgeOrders, payments, quotes } from '@/lib/data';
+import { StatusCard, StatusSkeleton } from 'ui-kit/status';
 import { formatAmount, formatDate, formatNotional } from '@/lib/format';
 
 export default async function OverviewPage() {
@@ -37,7 +38,16 @@ export default async function OverviewPage() {
             </ul>
           </div>
         </section>
-      ) : null}
+      ) : (
+        <StatusCard
+          tone="info"
+          title="Syncing risk plan insights"
+          subtitle="Waiting for the latest gateway allocation report."
+          data-testid="risk-plan-loading"
+        >
+          <StatusSkeleton tone="info" lines={3} />
+        </StatusCard>
+      )}
 
       <section className="section-card">
         <div className="section-title">

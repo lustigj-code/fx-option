@@ -80,4 +80,11 @@ These procedures support our obligations as a Commodity Trading Advisor (CTA) an
 - Store all signed certifications, meeting minutes, and review logs in the compliance document management system.
 - Update procedures promptly when regulations or business activities change.
 
+## 13. Gateway Telemetry & Audit Monitoring
+
+- **Daily telemetry review.** Operations pulls the gateway OpenTelemetry dashboard (latency, retry rate, error codes) each morning. Deviations above 5% error rate or latency > 1s trigger an escalation ticket to the Supervisory Committee and incident bridge within one hour.
+- **Feature flag governance.** Changes to `NEXT_PUBLIC_GATEWAY_ENABLED` or polling/backoff thresholds require documented approval from the CCO and Head of Engineering. Compliance logs flag toggles with timestamp, approver, and rationale.
+- **Audit log verification.** Compliance exports the gateway audit trail weekly from `data/audit-log.sqlite`, validating span-to-audit linkage for a sample of user actions. Missing telemetry entries are escalated to the CCO and incident response procedure is initiated.
+- **Outage response.** When telemetry indicates sustained gateway failures, Operations freezes automated polling, notifies client support, and coordinates with engineering to restore service. CCO receives a post-incident report within 24 hours summarizing impact and remediation steps.
+
 > **Status:** Reviewed by counsel; supervisory checklist completed and stored with supporting evidence.
