@@ -1,3 +1,24 @@
 {
-  "extends": ["next", "next/core-web-vitals"]
+  "extends": ["next", "next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": ["app/api/**/*.{ts,tsx}"],
+      "env": {
+        "node": true
+      }
+    },
+    {
+      "files": ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+      "excludedFiles": ["app/api/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "MemberExpression[object.type='MemberExpression'][object.object.name='process'][object.property.name='env'][property.name='NEXT_PUBLIC_API_BASE_URL']",
+            "message": "Use the Next.js API proxy route instead of referencing NEXT_PUBLIC_API_BASE_URL directly."
+          }
+        ]
+      }
+    }
+  ]
 }
