@@ -24,6 +24,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@shared/api": [
+        "../shared/api/index"
+      ],
+      "@shared/api/*": [
+        "../shared/api/*"
       ]
     },
     "plugins": [

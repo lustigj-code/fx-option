@@ -9,6 +9,7 @@
 
 ### Polling cadence & backoff
 - **Decision**: Default to 10s polling for exposures and quotes, adjustable via env; use exponential backoff (up to 60s) on errors with jitter, abort after 3 consecutive failures and surface alert.
+- **Implementation Notes**: Shared client resolves polling/backoff config from `NEXT_PUBLIC_GATEWAY_POLL_INTERVAL_MS`, `NEXT_PUBLIC_GATEWAY_MAX_BACKOFF_MS`, `NEXT_PUBLIC_GATEWAY_MAX_RETRIES`, and `NEXT_PUBLIC_GATEWAY_BACKOFF_JITTER` (with safe fallbacks when unset).
 - **Rationale**: Balances real-time feel with gateway SLA (<200ms p95, limited load).
 - **Alternatives**: WebSockets (overhead, not yet supported), manual refresh (poor UX).
 
