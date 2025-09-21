@@ -1,14 +1,16 @@
-import { cookies } from 'next/headers';
+import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 
 import { LoginForm } from '@/components/LoginForm';
-import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-options';
 
-export default function LoginPage() {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
-  const session = verifySessionToken(token);
+export default async function LoginPage() {
+  const session = await getServerSession(authOptions);
 
   if (session) {
+    if ((session as any).requiresMfa) {
+      redirect(`/auth/mfa?callbackUrl=${encodeURIComponent('/')}`);
+    }
     redirect('/');
   }
 

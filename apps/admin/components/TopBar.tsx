@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 
 export function TopBar({ username }: { username: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -8,13 +9,7 @@ export function TopBar({ username }: { username: string }) {
   const handleLogout = async () => {
     setIsSubmitting(true);
     try {
-      await fetch('/api/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      window.location.href = '/login';
+      await signOut({ callbackUrl: '/auth/login' });
     } finally {
       setIsSubmitting(false);
     }

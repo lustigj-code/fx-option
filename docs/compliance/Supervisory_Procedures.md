@@ -80,4 +80,12 @@ These procedures support our obligations as a Commodity Trading Advisor (CTA) an
 - Store all signed certifications, meeting minutes, and review logs in the compliance document management system.
 - Update procedures promptly when regulations or business activities change.
 
+## 13. Authentication & Access Controls
+
+- **User authentication.** Portal and admin surfaces use credential-based sign-in backed by role-aware sessions. Session lifetimes default to 8 hours (`SESSION_MAX_AGE`) with app-specific overrides documented in the Quickstart. Sessions require re-authentication upon expiration.
+- **Multi-factor authentication (MFA).** Roles `compliance_officer` and `admin` must complete MFA enrollment and verification prior to privileged access. Enrollment generates recovery codes and verified timestamps recorded in the audit trail.
+- **Failed-attempt lockout.** Accounts with repeated failures trigger temporary lockout using `AUTH_FAILED_ATTEMPT_THRESHOLD` and related timers. Compliance is alerted through audit events with `ACCOUNT_LOCKED` reason codes; unlocking requires CCO approval.
+- **Audit logging.** All login successes, failures, logouts, MFA events, and access-denied actions emit structured records to the audit service. The Control Room dashboard exposes `/events/auth` for daily review. Compliance downloads and signs off weekly, noting any anomalies and documenting escalation outcomes.
+- **Escalation path.** Locked accounts or suspicious authentication events are escalated to the Security Operations lead and the CCO within one business hour. Investigations must conclude within one business day with documented remediation and, if necessary, password resets or role changes.
+
 > **Status:** Reviewed by counsel; supervisory checklist completed and stored with supporting evidence.

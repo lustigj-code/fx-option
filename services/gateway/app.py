@@ -1,13 +1,13 @@
 """REST gateway stitching together pricing, risk, and execution primitives."""
 from __future__ import annotations
 
+import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import sys
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 
 PRICING_SRC = Path(__file__).resolve().parents[1] / "pricing-orchestrator" / "src"
 if PRICING_SRC.exists() and str(PRICING_SRC) not in sys.path:  # pragma: no cover - defensive
@@ -34,10 +34,13 @@ from services.gateway.schemas import (
     RiskPlanRequest,
     RiskPlanResponse,
 )
+from services.gateway.security.auth_middleware import JwtAuthMiddleware
 from services.gateway.settings import GatewaySettings, get_settings
 from services.risk.service import RiskService
 
 DEFAULT_EXECUTION_ROOT = Path(__file__).resolve().parents[2] / "data" / "execution-orders"
+
+logger = logging.getLogger("gateway.app")
 
 
 class DryRunIBKRClient:
@@ -112,6 +115,11 @@ def create_app(settings: GatewaySettings | None = None) -> FastAPI:
     app = FastAPI(title="FX Option Gateway")
 
     gateway_settings = settings or get_settings()
+
+    if gateway_settings.jwt_secret:
+        app.add_middleware(JwtAuthMiddleware, settings=gateway_settings)
+    else:
+        logger.warning("JWT secret not configured; authentication middleware disabled")
 
     execution_root = gateway_settings.storage_dir or DEFAULT_EXECUTION_ROOT
     execution_root.mkdir(parents=True, exist_ok=True)

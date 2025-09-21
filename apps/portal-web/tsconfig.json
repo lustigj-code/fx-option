@@ -29,11 +29,17 @@
       "@/styles/*": [
         "./app/*"
       ],
+      "@shared/auth": [
+        "../shared/auth/index"
+      ],
+      "@shared/auth/*": [
+        "../shared/auth/*"
+      ],
       "ui-kit": [
-        "../../packages/ui-kit/dist"
+        "../../packages/ui-kit/src"
       ],
       "ui-kit/*": [
-        "../../packages/ui-kit/dist/*"
+        "../../packages/ui-kit/src/*"
       ]
     },
     "plugins": [

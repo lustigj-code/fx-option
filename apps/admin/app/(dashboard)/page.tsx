@@ -1,11 +1,13 @@
 import Link from 'next/link';
 
 import { RealtimeCounters } from '@/components/RealtimeCounters';
-import { auditLog, events, fetchRiskSummary, hedgeOrders, payments, quotes } from '@/lib/data';
+import { events, fetchRiskSummary, hedgeOrders, payments, quotes } from '@/lib/data';
+import { fetchAuditEvents, formatMetadata } from '@/lib/audit';
 import { formatAmount, formatDate, formatNotional } from '@/lib/format';
 
 export default async function OverviewPage() {
   const riskPlan = await fetchRiskSummary();
+  const auditEvents = await fetchAuditEvents(8);
   return (
     <div className="space-y-10">
       <section>
@@ -198,12 +200,14 @@ export default async function OverviewPage() {
       <section className="section-card">
         <div className="section-title">Audit Trail Snapshots</div>
         <div className="grid gap-4 md:grid-cols-2">
-          {auditLog.slice(0, 4).map((entry) => (
+          {auditEvents.slice(0, 4).map((entry) => (
             <div key={entry.id} className="rounded-xl border border-slate-800/70 bg-slate-900/60 p-4">
-              <div className="text-sm font-semibold text-white">{entry.action}</div>
-              <div className="text-xs text-slate-400">{formatDate(entry.createdAt)} • {entry.actor}</div>
-              <p className="mt-2 text-sm text-slate-200">{entry.metadata}</p>
-              <div className="mt-1 text-xs text-slate-500">Entity {entry.entity} • {entry.ip}</div>
+              <div className="text-sm font-semibold text-white">{entry.eventType.replace(/_/g, ' ')}</div>
+              <div className="text-xs text-slate-400">{formatDate(entry.timestamp)} • {entry.userId}</div>
+              <p className="mt-2 text-sm text-slate-200">{formatMetadata(entry.metadata)}</p>
+              <div className="mt-1 text-xs text-slate-500">
+                Roles {entry.roles.length ? entry.roles.join(', ') : '—'} • {entry.ip ?? '—'}
+              </div>
             </div>
           ))}
         </div>

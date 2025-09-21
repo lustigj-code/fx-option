@@ -9,4 +9,7 @@ export * from './components/Stat';
 export * from './components/Table';
 export * from './components/TestimonialStrip';
 export * from './components/Toast';
+export * from './components/auth/LoginCard';
+export * from './components/auth/AccessDeniedCard';
+export * from './components/auth/MfaPrompt';
 export * from './styles';

@@ -1,0 +1,26 @@
+[
+  {
+    "email": "demo@fxportal.local",
+    "password": "demo-pass",
+    "roles": ["treasury_manager"],
+    "mfaVerified": false
+  },
+  {
+    "email": "risk.ops@fxportal.local",
+    "password": "risk-pass",
+    "roles": ["risk_analyst"],
+    "mfaVerified": false
+  },
+  {
+    "email": "compliance@fxportal.local",
+    "password": "compliance-pass",
+    "roles": ["compliance_officer"],
+    "mfaVerified": true
+  },
+  {
+    "email": "admin@fxportal.local",
+    "password": "admin-pass",
+    "roles": ["admin"],
+    "mfaVerified": true
+  }
+]

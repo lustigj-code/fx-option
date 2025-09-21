@@ -1,29 +1,33 @@
-import { cookies } from 'next/headers';
+import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
-import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-options';
 
-export default function DashboardLayout({
-  children
+export default async function DashboardLayout({
+  children,
 }: {
   children: ReactNode;
 }) {
-  const cookieStore = cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  const session = verifySessionToken(token);
+  const session = await getServerSession(authOptions);
 
   if (!session) {
-    redirect('/login');
+    redirect('/auth/login');
   }
+
+  if ((session as any).requiresMfa) {
+    redirect(`/auth/mfa?callbackUrl=${encodeURIComponent('/')}`);
+  }
+
+  const displayName = session.user.name ?? session.user.email ?? 'Operator';
 
   return (
     <div className="main-container">
       <Sidebar />
       <main className="content">
-        <TopBar username={session.username} />
+        <TopBar username={displayName} />
         {children}
       </main>
     </div>
