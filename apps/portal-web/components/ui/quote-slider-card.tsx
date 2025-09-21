@@ -4,6 +4,7 @@ import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
 import { Badge, Button } from "ui-kit";
+import { StatusBanner, StatusCard, StatusSkeleton } from "ui-kit/status";
 
 import type { MarketDataSnapshot } from "@/lib/market-data";
 import { fetchMarketData } from "@/lib/market-data";
@@ -21,26 +22,48 @@ const CHART_WIDTH = 420;
 const CHART_HEIGHT = 180;
 const CHART_PADDING = 18;
 
+export type QuoteSliderCardTestState = {
+  marketData?: MarketDataSnapshot | null;
+  quote?: QuoteResult | null;
+  curve?: PremiumCurvePoint[];
+  sliderValue?: number;
+  latency?: number;
+  error?: string | null;
+};
+
 export type QuoteSliderCardProps = {
   dealer: string;
   currencyPair: string;
   midRate: number;
   spreadBps: number;
+  testingState?: QuoteSliderCardTestState;
 };
 
-export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: QuoteSliderCardProps) {
-  const [marketData, setMarketData] = useState<MarketDataSnapshot | null>(null);
-  const [quote, setQuote] = useState<QuoteResult | null>(null);
-  const [curve, setCurve] = useState<PremiumCurvePoint[]>([]);
-  const [sliderValue, setSliderValue] = useState<number>(5);
-  const [latency, setLatency] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
+export function QuoteSliderCard({
+  dealer,
+  currencyPair,
+  midRate,
+  spreadBps,
+  testingState
+}: QuoteSliderCardProps) {
+  const [marketData, setMarketData] = useState<MarketDataSnapshot | null>(
+    testingState?.marketData ?? null
+  );
+  const [quote, setQuote] = useState<QuoteResult | null>(testingState?.quote ?? null);
+  const [curve, setCurve] = useState<PremiumCurvePoint[]>(testingState?.curve ?? []);
+  const [sliderValue, setSliderValue] = useState<number>(testingState?.sliderValue ?? 5);
+  const [latency, setLatency] = useState<number>(testingState?.latency ?? 0);
+  const [error, setError] = useState<string | null>(testingState?.error ?? null);
+
+  const isTestMode = Boolean(testingState);
 
   const handleRangeChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSliderValue(parseFloat(event.target.value));
   };
 
   useEffect(() => {
+    if (isTestMode) return;
+
     let mounted = true;
 
     fetchMarketData()
@@ -58,10 +81,10 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isTestMode]);
 
   useEffect(() => {
-    if (!marketData) return;
+    if (isTestMode || !marketData) return;
 
     const snapshot = marketData;
 
@@ -122,7 +145,7 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
     return () => {
       cancelled = true;
     };
-  }, [marketData, sliderValue, currencyPair]);
+  }, [isTestMode, marketData, sliderValue, currencyPair]);
 
   const selectedPoint = useMemo(() => {
     if (!curve.length) return null;
@@ -145,15 +168,15 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
 
   if (!marketData || !quote) {
     return (
-      <section className="glass-panel relative overflow-hidden rounded-3xl p-8 shadow-glow">
-        <div className="noise-overlay absolute inset-0 opacity-60" />
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-3 text-sm text-slate-300">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-            Priming invoice engine…
-          </div>
-        </div>
-      </section>
+      <StatusCard
+        tone="info"
+        title="Connecting to pricing gateway"
+        subtitle="Polling the gateway for fresh pricing and market data."
+        className="glass-panel relative overflow-hidden shadow-glow"
+        data-testid="quote-loading-card"
+      >
+        <StatusSkeleton tone="info" lines={4} />
+      </StatusCard>
     );
   }
 
@@ -161,6 +184,11 @@ export function QuoteSliderCard({ dealer, currencyPair, midRate, spreadBps }: Qu
     <section className="glass-panel relative overflow-hidden rounded-3xl p-8 shadow-glow">
       <div className="noise-overlay absolute inset-0 opacity-60" />
       <div className="relative z-10 flex flex-col gap-8">
+        {error ? (
+          <StatusBanner tone="critical" data-testid="quote-error-banner">
+            {error}
+          </StatusBanner>
+        ) : null}
         <header className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="space-y-5">
             <div className="flex flex-wrap gap-2">

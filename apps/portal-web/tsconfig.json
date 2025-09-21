@@ -29,6 +29,15 @@
       "@/styles/*": [
         "./app/*"
       ],
+      "@shared/api": [
+        "../shared/api"
+      ],
+      "@shared/api/*": [
+        "../shared/api/*"
+      ],
+      "@opentelemetry/api": [
+        "../../vendor/@opentelemetry/api/index.d.ts"
+      ],
       "ui-kit": [
         "../../packages/ui-kit/dist"
       ],

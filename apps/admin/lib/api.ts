@@ -1,30 +1,41 @@
-const API_BASE_URL = process.env.ADMIN_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+import {
+  createGatewayClient,
+  gatewayClient as sharedGatewayClient,
+  type GatewayClient,
+  type RiskPlanRequest,
+  type RiskPlanResponse,
+} from '@shared/api/client';
+import * as sharedConfig from '@shared/api/config';
 
-async function postJSON<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    ...init,
-    body: JSON.stringify(body)
-  });
+let cachedGatewayClient: GatewayClient | null = null;
 
-  if (!response.ok) {
-    throw new Error(await response.text() || response.statusText);
+function resolveGatewayClient(): GatewayClient {
+  if (cachedGatewayClient) {
+    return cachedGatewayClient;
   }
 
-  return response.json() as Promise<T>;
+  const adminBaseUrl = process.env.ADMIN_API_BASE_URL;
+  if (adminBaseUrl && adminBaseUrl.length > 0) {
+    cachedGatewayClient = createGatewayClient({ baseUrl: adminBaseUrl });
+    return cachedGatewayClient;
+  }
+
+  cachedGatewayClient = sharedGatewayClient;
+  return cachedGatewayClient;
 }
 
-export interface RiskPlan {
-  buckets: Array<Record<string, unknown>>;
-  execution_plan: Array<Record<string, unknown>>;
-  netting_savings: Record<string, unknown>;
-}
+export type { RiskPlanRequest, RiskPlanResponse, GatewayClient };
+export { type GatewayConfig } from '@shared/api/config';
+export const getGatewayConfig = () => sharedConfig.readGatewayConfig();
+export const isGatewayEnabled = () => sharedConfig.isGatewayEnabled();
 
-export async function fetchRiskPlan(payload: unknown): Promise<RiskPlan> {
-  return postJSON<RiskPlan>('/api/risk/plan', payload);
+export async function fetchRiskPlan(payload: RiskPlanRequest, init?: RequestInit): Promise<RiskPlanResponse> {
+  try {
+    return await resolveGatewayClient().fetchRiskPlan(payload, init);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch risk plan');
+  }
 }
-
-export { postJSON };

@@ -24,6 +24,15 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@shared/api": [
+        "../shared/api"
+      ],
+      "@shared/api/*": [
+        "../shared/api/*"
+      ],
+      "@opentelemetry/api": [
+        "../../vendor/@opentelemetry/api/index.d.ts"
       ]
     },
     "plugins": [
