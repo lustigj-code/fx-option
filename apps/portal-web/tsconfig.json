@@ -29,6 +29,12 @@
       "@/styles/*": [
         "./app/*"
       ],
+      "@shared/api": [
+        "../shared/api/index"
+      ],
+      "@shared/api/*": [
+        "../shared/api/*"
+      ],
       "ui-kit": [
         "../../packages/ui-kit/dist"
       ],
