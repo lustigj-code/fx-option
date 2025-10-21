@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import sys
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import JSONResponse, PlainTextResponse
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 PRICING_SRC = Path(__file__).resolve().parents[1] / "pricing-orchestrator" / "src"
 if PRICING_SRC.exists() and str(PRICING_SRC) not in sys.path:  # pragma: no cover - defensive
@@ -35,7 +36,16 @@ from services.gateway.schemas import (
     RiskPlanResponse,
 )
 from services.gateway.settings import GatewaySettings, get_settings
+from services.gateway.middleware import (
+    PrometheusMiddleware,
+    SecurityHeadersMiddleware,
+    setup_cors,
+    setup_trusted_hosts,
+)
 from services.risk.service import RiskService
+from services.auth.router import router as auth_router
+from services.auth.dependencies import get_current_active_user, require_operator
+from services.database.models import User
 
 DEFAULT_EXECUTION_ROOT = Path(__file__).resolve().parents[2] / "data" / "execution-orders"
 
@@ -109,10 +119,27 @@ class UTCClock(Clock):
 
 
 def create_app(settings: GatewaySettings | None = None) -> FastAPI:
-    app = FastAPI(title="FX Option Gateway")
+    """Create and configure the FastAPI application."""
+    app = FastAPI(
+        title="FX Option Gateway",
+        description="Production-ready API gateway for FX option pricing, risk management, and execution",
+        version="0.1.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+    )
 
     gateway_settings = settings or get_settings()
 
+    # Setup middleware (order matters!)
+    app.add_middleware(PrometheusMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
+    setup_cors(app)
+    setup_trusted_hosts(app)
+
+    # Include authentication router
+    app.include_router(auth_router)
+
+    # Setup execution service
     execution_root = gateway_settings.storage_dir or DEFAULT_EXECUTION_ROOT
     execution_root.mkdir(parents=True, exist_ok=True)
     execution_emitter = InMemoryEventEmitter()
@@ -127,8 +154,69 @@ def create_app(settings: GatewaySettings | None = None) -> FastAPI:
 
     pricing_engine: PricingEngine = BlackScholesPricingEngine()
 
-    @app.post("/api/quotes/binding", response_model=BindingQuoteResponse)
-    def binding_quote(payload: BindingQuoteRequest) -> BindingQuoteResponse:
+    # ==================== Health & Monitoring ====================
+
+    @app.get("/health", tags=["Health"])
+    def health_check():
+        """Basic health check endpoint.
+
+        Returns service status. Always returns 200 if the service is running.
+        Use this for basic uptime monitoring.
+        """
+        return {
+            "status": "healthy",
+            "service": "gateway",
+            "version": "0.1.0",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    @app.get("/readiness", tags=["Health"])
+    def readiness_check():
+        """Readiness check for kubernetes/load balancers.
+
+        Indicates whether the service is ready to accept traffic.
+        Can be extended to check database connectivity, external service health, etc.
+        """
+        return {
+            "status": "ready",
+            "dry_run": gateway_settings.dry_run,
+            "execution_service": "initialized",
+            "pricing_engine": "black_scholes",
+        }
+
+    @app.get("/metrics", tags=["Monitoring"])
+    def metrics():
+        """Prometheus metrics endpoint.
+
+        Exposes application metrics in Prometheus format.
+        Scrape this endpoint with Prometheus to collect:
+        - HTTP request counts and durations
+        - Active request counts
+        - Custom business metrics
+        """
+        return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+    # ==================== Quote Generation ====================
+
+    @app.post("/api/quotes/binding", response_model=BindingQuoteResponse, tags=["Quotes"])
+    def binding_quote(
+        payload: BindingQuoteRequest,
+        current_user: User = Depends(get_current_active_user),
+    ) -> BindingQuoteResponse:
+        """Generate a binding quote for an FX option exposure.
+
+        Uses Black-Scholes pricing model with market data inputs to generate
+        a time-limited binding quote. The quote is valid for 2 minutes minus
+        a safety buffer.
+
+        **Authentication**: Required (all authenticated users)
+
+        **Rate Limit**: 200ms P99 SLA enforced
+
+        **Returns**:
+        - Binding quote with price, validity window, and market parameters
+        - Downstream event for quote publication
+        """
         exposure, snapshot = payload.to_domain()
         provider = InMemoryMarketDataProvider({exposure.exposure_id: snapshot})
         repository = InMemoryQuoteRepository()
@@ -160,8 +248,28 @@ def create_app(settings: GatewaySettings | None = None) -> FastAPI:
             downstream_event=downstream,
         )
 
-    @app.post("/api/risk/plan", response_model=RiskPlanResponse)
-    def risk_plan(request: RiskPlanRequest) -> RiskPlanResponse:
+    # ==================== Risk Management ====================
+
+    @app.post("/api/risk/plan", response_model=RiskPlanResponse, tags=["Risk"])
+    def risk_plan(
+        request: RiskPlanRequest,
+        current_user: User = Depends(require_operator),
+    ) -> RiskPlanResponse:
+        """Generate risk plan with weekly netting buckets and execution recommendations.
+
+        Analyzes exposures, existing hedges, and quotes to:
+        - Group positions by currency pair and weekly expiry
+        - Calculate pre/post-hedge delta and VaR
+        - Compute netting savings from offsetting positions
+        - Generate optimal execution plan
+
+        **Authentication**: Required (operator or admin role)
+
+        **Returns**:
+        - Weekly risk buckets with delta/VaR calculations
+        - Execution plan for residual positions
+        - Netting savings analysis
+        """
         service = RiskService(quotes=[quote.model_dump() for quote in request.quotes])
         plan = service.generate_plan(
             [exposure.model_dump() for exposure in request.exposures],
@@ -175,8 +283,27 @@ def create_app(settings: GatewaySettings | None = None) -> FastAPI:
             netting_savings=plan.get("netting_savings", {}),
         )
 
-    @app.post("/api/execution/orders", response_model=ExecutionResponse, status_code=201)
-    def execution_orders(request: ExecutionOrderRequest) -> ExecutionResponse:
+    # ==================== Execution ====================
+
+    @app.post("/api/execution/orders", response_model=ExecutionResponse, status_code=201, tags=["Execution"])
+    def execution_orders(
+        request: ExecutionOrderRequest,
+        current_user: User = Depends(require_operator),
+    ) -> ExecutionResponse:
+        """Submit laddered hedge orders for execution via IBKR.
+
+        Constructs a ladder of option orders across multiple expiries and strikes,
+        allocates quantity, and submits to Interactive Brokers for execution.
+
+        **Authentication**: Required (operator or admin role)
+
+        **Dry-run mode**: Enabled by default. Set GATEWAY_DRY_RUN=false for production.
+
+        **Returns**:
+        - List of submitted orders with IBKR order IDs
+        - Order status and fill information
+        - Hedge placement event
+        """
         try:
             hedge_request = request.to_domain()
         except ValueError as exc:  # pragma: no cover - defensive
