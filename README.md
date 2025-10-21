@@ -8,6 +8,52 @@ Unified monorepo for the FX option platform. It includes:
 - `services/` – Python services covering pricing orchestration, market data, risk netting, payments, audit chains, connectors, and execution workflows.
 - `docs/` – Product, compliance, and connector documentation.
 
+## Quick Start with Docker Compose (Recommended)
+
+The fastest way to run the entire platform locally:
+
+```bash
+# Copy environment variables
+cp .env.example .env
+
+# Start all services (PostgreSQL, Redis, Gateway, Frontend apps, Monitoring)
+make up
+
+# Or using docker-compose directly
+docker-compose up -d
+
+# View logs
+make logs
+
+# Run database migrations
+make migrate
+```
+
+**Access the applications:**
+- **Client Portal**: http://localhost:3000
+- **Admin Dashboard**: http://localhost:3001
+- **Gateway API**: http://localhost:8000
+- **Grafana Monitoring**: http://localhost:3002 (admin/admin)
+- **Prometheus**: http://localhost:9090
+
+**Useful commands:**
+```bash
+make help              # Show all available commands
+make ps                # Show running containers
+make logs-gateway      # View gateway logs
+make db-shell          # Open PostgreSQL shell
+make redis-shell       # Open Redis CLI
+make down              # Stop all services
+make clean             # Remove all containers and volumes
+```
+
+## Prerequisites
+
+- Docker and Docker Compose
+- Node.js 20+ and pnpm 10.17.0 (for local frontend development)
+- Python 3.10+ (for local backend development)
+- Make (optional, for using Makefile commands)
+
 ## Frontend development
 
 ```bash

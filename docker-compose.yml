@@ -1,0 +1,172 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: fxoption-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fxoption
+      POSTGRES_PASSWORD: fxoption_dev
+      POSTGRES_DB: fxoption
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fxoption"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fxoption-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: fxoption-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - fxoption-network
+
+  # Gateway API Service
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: fxoption-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=fxoption
+      - DATABASE_PASSWORD=fxoption_dev
+      - DATABASE_NAME=fxoption
+      - DATABASE_REDIS_HOST=redis
+      - DATABASE_REDIS_PORT=6379
+      - GATEWAY_DRY_RUN=true
+      - GATEWAY_HOST=0.0.0.0
+      - GATEWAY_PORT=8000
+      - GATEWAY_STORAGE_DIR=/app/data/execution-orders
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./services:/app/services
+    networks:
+      - fxoption-network
+    command: uvicorn services.gateway.app:app --host 0.0.0.0 --port 8000 --reload
+
+  # Portal Web (Client Frontend)
+  portal-web:
+    build:
+      context: .
+      dockerfile: apps/portal-web/Dockerfile
+    container_name: fxoption-portal
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=dev_secret_change_in_production_min_32_chars
+    depends_on:
+      - gateway
+    volumes:
+      - ./apps/portal-web:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - fxoption-network
+
+  # Admin Dashboard
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    container_name: fxoption-admin
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - ADMIN_API_BASE_URL=http://localhost:8000
+      - NEXTAUTH_URL=http://localhost:3001
+      - NEXTAUTH_SECRET=dev_secret_change_in_production_min_32_chars
+    depends_on:
+      - gateway
+    volumes:
+      - ./apps/admin:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - fxoption-network
+
+  # Prometheus (Metrics Collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fxoption-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - fxoption-network
+
+  # Grafana (Metrics Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fxoption-grafana
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - fxoption-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  fxoption-network:
+    driver: bridge
